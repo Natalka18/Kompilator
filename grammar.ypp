@@ -1,0 +1,105 @@
+%{
+	#include<iostream>
+	#include<string>
+	
+	using namespace std;
+	
+	int yylex();
+	int yyerror(string);
+	extern int yylineno;
+%}
+
+%token DECLARE
+%token BEGIN_TOKEN
+%token END
+%token ASSIGN
+%token IF
+%token THEN
+%token ELSE
+%token ENDIF
+%token WHILE
+%token DO
+%token ENDWHILE
+%token ENDDO
+%token FOR
+%token FROM
+%token TO
+%token ENDFOR
+%token DOWNTO
+%token READ
+%token WRITE
+%token PLUS
+%token MINUS
+%token TIMES
+%token DIV
+%token MOD
+%token EQ
+%token NEQ
+%token LE
+%token GE
+%token LEQ
+%token GEQ
+
+%token num
+%token pidentifier
+%token comma
+%token semicolon
+%token colon
+%token left_bracket
+%token right_bracket
+
+%token ERROR
+
+
+
+%%
+
+program       : DECLARE declarations BEGIN_TOKEN commands END
+              | BEGIN_TOKEN commands END
+
+declarations  : declarations comma pidentifier
+              | declarations comma pidentifier left_bracket num colon num right_bracket
+              | pidentifier
+              | pidentifier left_bracket num colon num right_bracket
+
+commands      : commands command
+              | command
+
+command       : identifier ASSIGN expression semicolon
+              | IF condition THEN commands ELSE commands ENDIF
+              | IF condition THEN commands ENDIF
+              | WHILE condition DO commands ENDWHILE
+              | DO commands WHILE condition ENDDO
+              | FOR pidentifier FROM value TO value DO commands ENDFOR
+              | FOR pidentifier FROM value DOWNTO value DO commands ENDFOR
+              | READ identifier semicolon
+              | WRITE value semicolon
+
+expression    : value
+              | value PLUS value
+              | value MINUS value
+              | value TIMES value
+              | value DIV value
+              | value MOD value
+
+condition     : value EQ value
+              | value NEQ value
+              | value LE value
+              | value GE value
+              | value LEQ value
+              | value GEQ value
+
+value         : num
+              | identifier
+
+identifier    : pidentifier
+              | pidentifier left_bracket pidentifier right_bracket
+              | pidentifier left_bracket num right_bracket
+
+%%
+
+int yyerror(string s) {
+	return 0;
+}
+
+

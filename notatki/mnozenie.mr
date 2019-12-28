@@ -1,0 +1,72 @@
+# mnożenie liczb znajdujących się w komórkach 10 i 11 (działa też dla liczb ujemnych)
+
+GET
+STORE 10
+GET
+STORE 11
+SUB 0
+STORE 4
+INC
+STORE 1 
+DEC
+DEC
+STORE 2 
+
+
+# if b (11)
+LOAD 11
+INC
+JPOS 35 # mnożenie
+
+
+# if a (14)
+LOAD 10
+INC
+JPOS 29 # else
+
+
+LOAD 10
+SHIFT 1
+STORE 15
+LOAD 10
+SUB 15
+STORE 10
+LOAD 11
+SHIFT 1
+STORE 15
+LOAD 11
+SUB 15
+STORE 11
+
+
+# else (29)
+LOAD 10
+STORE 15
+LOAD 11
+STORE 10
+LOAD 15
+STORE 11
+
+
+# mnożenie (35)
+
+
+LOAD 11     
+JZERO 50
+STORE 3      
+SHIFT 2
+STORE 11     
+SHIFT 1
+SUB 3       
+JZERO 46
+LOAD 10
+ADD 4
+STORE 4
+LOAD 10
+SHIFT 1    
+STORE 10
+JUMP 35
+LOAD 4   
+PUT
+HALT
+
