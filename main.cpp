@@ -1,11 +1,11 @@
 // dane wczytuje z pliku, ale jest problem z pisaniem do pliku
 
 #include<iostream>
+#include<fstream>
 
 extern void yyparse();
 extern void yyset_in(FILE*);
 extern void yyset_out(FILE*);
-extern FILE *yyout;
 
 using namespace std;
 
@@ -24,9 +24,9 @@ int main(int argc, char* argv[]) {
 				cerr << "Nie można otworzyć pliku " << argv[2] << endl;
 			}
 		} else {
+			yyset_out(file_out);
+			//yyout = file_out;
 			yyset_in(file_in);
-			yyout = file_out;
-			//yyset_out(file_out);
 			yyparse();
 			fclose(file_in);
 			fclose(file_out);

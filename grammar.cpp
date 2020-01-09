@@ -65,12 +65,13 @@
 #line 1 "grammar.ypp" /* yacc.c:339  */
 
 	#include<iostream>
+	#include<fstream>
 	#include<string>
 	#include<vector>
 	#include<map>
 	
 	#include"Instruction.hpp"
-	#include"Value.hpp"
+	//#include"Value.hpp"
 	#include"MemoryItem.hpp"
 	
 	using namespace std;
@@ -79,16 +80,21 @@
 	int yyerror(string);
 	extern int yylineno;
 	
+	void yyset_out(FILE* out_str);
+	FILE* yyget_out();
+	
 	long long memory_pointer = 1; //zmienić to
 	vector<Instruction*> instructions; // wektor przechowujący kolejne instrukcje assemblerowe
 	map<string,MemoryItem*> variables; // mapa przechwująca pary (nazwa zmiennej, komórka pamięci)
 	
 	void printInstructions();
-	
 	// funkcja dodaje do wektora variables nową zmienną. Zwraca true, jeśli operacja się powiedzie
 	bool declareVariable(string name);
+	// funkcja wczytuje wartość oraz zapisuje ją w zmiennej o nazwie name.
+	// Zwraca true, jeśli operacja się powiedzie. Dodaje odpowiednie instrukcje assemblera
+	bool loadValueToVariable(string name);
 
-#line 92 "grammar.cpp" /* yacc.c:339  */
+#line 98 "grammar.cpp" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -169,12 +175,12 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 27 "grammar.ypp" /* yacc.c:355  */
+#line 33 "grammar.ypp" /* yacc.c:355  */
 
 	char* string;
 	int integer;
 
-#line 178 "grammar.cpp" /* yacc.c:355  */
+#line 184 "grammar.cpp" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -191,7 +197,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 195 "grammar.cpp" /* yacc.c:358  */
+#line 201 "grammar.cpp" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -492,10 +498,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    77,    77,    81,    87,    90,    91,    94,    97,    98,
-     101,   102,   103,   104,   105,   106,   107,   108,   109,   112,
-     113,   114,   115,   116,   117,   120,   121,   122,   123,   124,
-     125,   128,   129,   132,   133,   134
+       0,    85,    85,    89,    95,    98,    99,   102,   105,   106,
+     109,   110,   111,   112,   113,   114,   115,   116,   119,   122,
+     123,   124,   125,   126,   127,   130,   131,   132,   133,   134,
+     135,   138,   139,   142,   145,   146
 };
 #endif
 
@@ -1346,41 +1352,57 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 77 "grammar.ypp" /* yacc.c:1646  */
+#line 85 "grammar.ypp" /* yacc.c:1646  */
     {
 	instructions.push_back(new Instruction("HALT"));
 	printInstructions();
 }
-#line 1355 "grammar.cpp" /* yacc.c:1646  */
+#line 1361 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 81 "grammar.ypp" /* yacc.c:1646  */
+#line 89 "grammar.ypp" /* yacc.c:1646  */
     {
 	instructions.push_back(new Instruction("HALT"));
 	printInstructions();
 }
-#line 1364 "grammar.cpp" /* yacc.c:1646  */
+#line 1370 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 87 "grammar.ypp" /* yacc.c:1646  */
+#line 95 "grammar.ypp" /* yacc.c:1646  */
     {
 					declareVariable((yyvsp[0].string));
 				}
-#line 1372 "grammar.cpp" /* yacc.c:1646  */
+#line 1378 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 91 "grammar.ypp" /* yacc.c:1646  */
+#line 99 "grammar.ypp" /* yacc.c:1646  */
     {
               	declareVariable((yyvsp[0].string));
               }
-#line 1380 "grammar.cpp" /* yacc.c:1646  */
+#line 1386 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 17:
+#line 116 "grammar.ypp" /* yacc.c:1646  */
+    {
+              	loadValueToVariable((yyvsp[-1].string));
+              }
+#line 1394 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 33:
+#line 142 "grammar.ypp" /* yacc.c:1646  */
+    {
+					(yyval.string) = (yyvsp[0].string);
+}
+#line 1402 "grammar.cpp" /* yacc.c:1646  */
     break;
 
 
-#line 1384 "grammar.cpp" /* yacc.c:1646  */
+#line 1406 "grammar.cpp" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1608,7 +1630,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 137 "grammar.ypp" /* yacc.c:1906  */
+#line 149 "grammar.ypp" /* yacc.c:1906  */
 
 
 int yyerror(string s) {
@@ -1617,14 +1639,19 @@ int yyerror(string s) {
 }
 
 void printInstructions() {
+	//ofstream out("output.txt");
 	for(int i=0; i<instructions.size(); i++) {
-		cout << instructions[i]->toString() << endl;
+		//cout << instructions[i]->toString() << endl;
+		//fprintf(yyget_out(), instructions[i]->toString());
+		//out << instructions[i]->toString() << endl;
+		
+		fprintf(yyget_out(), "%s\n", instructions[i]->toString().c_str());
 	}
+	//out.close();
 }
 
 bool declareVariable(string name) {
 	// jeśli zmienna o nazwie name nie jest jeszcze zadeklarowana
-	
 	if(variables.find(name) == variables.end()) {
 		MemoryItem* memory_item = new MemoryItem(memory_pointer, name);
 		variables[name] = memory_item;
@@ -1632,6 +1659,27 @@ bool declareVariable(string name) {
 		memory_pointer++;
 	} else {
 		yyerror("Duplicate variable \"" + name + "\"");
+	}
+}
+
+bool loadValueToVariable(string name) {
+	// jeśli zmienna o nazwie name nie jest zadeklarowana
+	if(variables.find(name) == variables.end()) {
+		yyerror(name + " was not declared");
+		return false;
+	} else {
+		// inicjalizujemy zwykłą zmienną
+		if(!(variables[name]->isArray)) {
+			// wczytanie wartość do akumulatora
+			instructions.push_back(new Instruction("GET"));
+			// zapisanie wartości z akumulatora do komórki o indeksie
+			// odpowiadającym zmiennej o nazwie name
+			instructions.push_back(new Instruction("STORE", variables[name]->index));
+		} else {
+			
+		}
+		
+		return true;
 	}
 }
 

@@ -1,11 +1,12 @@
 %{
 	#include<iostream>
+	#include<fstream>
 	#include<string>
 	#include<vector>
 	#include<map>
 	
 	#include"Instruction.hpp"
-	#include"Value.hpp"
+	//#include"Value.hpp"
 	#include"MemoryItem.hpp"
 	
 	using namespace std;
@@ -14,20 +15,27 @@
 	int yyerror(string);
 	extern int yylineno;
 	
+	void yyset_out(FILE* out_str);
+	FILE* yyget_out();
+	
 	long long memory_pointer = 1; //zmienić to
 	vector<Instruction*> instructions; // wektor przechowujący kolejne instrukcje assemblerowe
 	map<string,MemoryItem*> variables; // mapa przechwująca pary (nazwa zmiennej, komórka pamięci)
 	
 	void printInstructions();
-	
 	// funkcja dodaje do wektora variables nową zmienną. Zwraca true, jeśli operacja się powiedzie
 	bool declareVariable(string name);
+	// funkcja wczytuje wartość oraz zapisuje ją w zmiennej o nazwie name.
+	// Zwraca true, jeśli operacja się powiedzie. Dodaje odpowiednie instrukcje assemblera
+	bool loadValueToVariable(string name);
 %}
 
 %union {
 	char* string;
 	int integer;
 };
+
+%type<string> identifier
 
 %token DECLARE
 %token BEGIN_TOKEN
@@ -105,7 +113,9 @@ command       : identifier ASSIGN expression semicolon
               | DO commands WHILE condition ENDDO
               | FOR pidentifier FROM value TO value DO commands ENDFOR
               | FOR pidentifier FROM value DOWNTO value DO commands ENDFOR
-              | READ identifier semicolon
+              | READ identifier semicolon {
+              	loadValueToVariable($2);
+              }
               | WRITE value semicolon
               ;
 
@@ -129,7 +139,9 @@ value         : num
               | identifier
               ;
 
-identifier    : pidentifier
+identifier    : pidentifier {
+					$$ = $1;
+}
               | pidentifier left_bracket pidentifier right_bracket
               | pidentifier left_bracket num right_bracket
               ;
@@ -143,13 +155,12 @@ int yyerror(string s) {
 
 void printInstructions() {
 	for(int i=0; i<instructions.size(); i++) {
-		cout << instructions[i]->toString() << endl;
+		fprintf(yyget_out(), "%s\n", instructions[i]->toString().c_str());
 	}
 }
 
 bool declareVariable(string name) {
 	// jeśli zmienna o nazwie name nie jest jeszcze zadeklarowana
-	
 	if(variables.find(name) == variables.end()) {
 		MemoryItem* memory_item = new MemoryItem(memory_pointer, name);
 		variables[name] = memory_item;
@@ -157,6 +168,27 @@ bool declareVariable(string name) {
 		memory_pointer++;
 	} else {
 		yyerror("Duplicate variable \"" + name + "\"");
+	}
+}
+
+bool loadValueToVariable(string name) {
+	// jeśli zmienna o nazwie name nie jest zadeklarowana
+	if(variables.find(name) == variables.end()) {
+		yyerror(name + " was not declared");
+		return false;
+	} else {
+		// inicjalizujemy zwykłą zmienną
+		if(!(variables[name]->isArray)) {
+			// wczytanie wartość do akumulatora
+			instructions.push_back(new Instruction("GET"));
+			// zapisanie wartości z akumulatora do komórki o indeksie
+			// odpowiadającym zmiennej o nazwie name
+			instructions.push_back(new Instruction("STORE", variables[name]->index));
+		} else {
+			
+		}
+		
+		return true;
 	}
 }
 
