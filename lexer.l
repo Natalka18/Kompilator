@@ -10,15 +10,18 @@
 %}
 
 num				[-]?[0-9]+
-pidentifier		[_a-z]+
-white			[ \t]*
+pid				[_a-z]+
+white			[ \t]
 
 %s COMMENT
 
 %%
 
-{num}				{ return num; }
-{pidentifier}		{ return pidentifier; }
+"["					{ BEGIN(COMMENT); }
+<COMMENT>"]"		{ BEGIN(INITIAL); }
+<COMMENT>.			;
+<COMMENT>"\n"		;
+
 {white}				;
 "\n"				;
 
@@ -59,14 +62,12 @@ white			[ \t]*
 "LEQ"				{ return LEQ; }
 "GEQ"				{ return GEQ; }
 
-
-"["					{ BEGIN(COMMENT); }
-<COMMENT>"]"		{ BEGIN(INITIAL); }
-<COMMENT>.			;
+{num}				{ return num; }
+{pid}				{ yylval.string = strdup(yytext); return pidentifier; }
 
 
 .					{ 
-							cout << "Line " << yylineno << \
+							cerr << "Line " << yylineno << \
 							 ": unrecognized character " << yytext <<endl; 
 							return ERROR; 
 					}

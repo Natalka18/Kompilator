@@ -1,8 +1,11 @@
+// dane wczytuje z pliku, ale jest problem z pisaniem do pliku
+
 #include<iostream>
 
 extern void yyparse();
 extern void yyset_in(FILE*);
 extern void yyset_out(FILE*);
+extern FILE *yyout;
 
 using namespace std;
 
@@ -22,6 +25,8 @@ int main(int argc, char* argv[]) {
 			}
 		} else {
 			yyset_in(file_in);
+			yyout = file_out;
+			//yyset_out(file_out);
 			yyparse();
 			fclose(file_in);
 			fclose(file_out);

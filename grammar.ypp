@@ -1,13 +1,33 @@
 %{
 	#include<iostream>
 	#include<string>
+	#include<vector>
+	#include<map>
+	
+	#include"Instruction.hpp"
+	#include"Value.hpp"
+	#include"MemoryItem.hpp"
 	
 	using namespace std;
 	
 	int yylex();
 	int yyerror(string);
 	extern int yylineno;
+	
+	long long memory_pointer = 1; //zmienić to
+	vector<Instruction*> instructions; // wektor przechowujący kolejne instrukcje assemblerowe
+	map<string,MemoryItem*> variables; // mapa przechwująca pary (nazwa zmiennej, komórka pamięci)
+	
+	void printInstructions();
+	
+	// funkcja dodaje do wektora variables nową zmienną. Zwraca true, jeśli operacja się powiedzie
+	bool declareVariable(string name);
 %}
+
+%union {
+	char* string;
+	int integer;
+};
 
 %token DECLARE
 %token BEGIN_TOKEN
@@ -41,7 +61,7 @@
 %token GEQ
 
 %token num
-%token pidentifier
+%token<string> pidentifier
 %token comma
 %token semicolon
 %token colon
@@ -54,16 +74,29 @@
 
 %%
 
-program       : DECLARE declarations BEGIN_TOKEN commands END
-              | BEGIN_TOKEN commands END
+program       : DECLARE declarations BEGIN_TOKEN commands END {
+	instructions.push_back(new Instruction("HALT"));
+	printInstructions();
+}
+              | BEGIN_TOKEN commands END{
+	instructions.push_back(new Instruction("HALT"));
+	printInstructions();
+}
+;
 
-declarations  : declarations comma pidentifier
+declarations  : declarations comma pidentifier {
+					declareVariable($3);
+				}
               | declarations comma pidentifier left_bracket num colon num right_bracket
-              | pidentifier
+              | pidentifier {
+              	declareVariable($1);
+              }
               | pidentifier left_bracket num colon num right_bracket
+              ;
 
 commands      : commands command
               | command
+              ;
 
 command       : identifier ASSIGN expression semicolon
               | IF condition THEN commands ELSE commands ENDIF
@@ -74,6 +107,7 @@ command       : identifier ASSIGN expression semicolon
               | FOR pidentifier FROM value DOWNTO value DO commands ENDFOR
               | READ identifier semicolon
               | WRITE value semicolon
+              ;
 
 expression    : value
               | value PLUS value
@@ -81,6 +115,7 @@ expression    : value
               | value TIMES value
               | value DIV value
               | value MOD value
+              ;
 
 condition     : value EQ value
               | value NEQ value
@@ -88,18 +123,41 @@ condition     : value EQ value
               | value GE value
               | value LEQ value
               | value GEQ value
+              ;
 
 value         : num
               | identifier
+              ;
 
 identifier    : pidentifier
               | pidentifier left_bracket pidentifier right_bracket
               | pidentifier left_bracket num right_bracket
+              ;
 
 %%
 
 int yyerror(string s) {
+	cerr << "Line " << yylineno << ": " << s << endl;
 	return 0;
+}
+
+void printInstructions() {
+	for(int i=0; i<instructions.size(); i++) {
+		cout << instructions[i]->toString() << endl;
+	}
+}
+
+bool declareVariable(string name) {
+	// jeśli zmienna o nazwie name nie jest jeszcze zadeklarowana
+	
+	if(variables.find(name) == variables.end()) {
+		MemoryItem* memory_item = new MemoryItem(memory_pointer, name);
+		variables[name] = memory_item;
+		
+		memory_pointer++;
+	} else {
+		yyerror("Duplicate variable \"" + name + "\"");
+	}
 }
 
 

@@ -2,3 +2,6 @@
 *.exe
 *.app
 *.out
+*.imp
+*.txt
+kompilator

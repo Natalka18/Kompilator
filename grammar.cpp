@@ -66,14 +66,29 @@
 
 	#include<iostream>
 	#include<string>
+	#include<vector>
+	#include<map>
+	
+	#include"Instruction.hpp"
+	#include"Value.hpp"
+	#include"MemoryItem.hpp"
 	
 	using namespace std;
 	
 	int yylex();
 	int yyerror(string);
 	extern int yylineno;
+	
+	long long memory_pointer = 1; //zmienić to
+	vector<Instruction*> instructions; // wektor przechowujący kolejne instrukcje assemblerowe
+	map<string,MemoryItem*> variables; // mapa przechwująca pary (nazwa zmiennej, komórka pamięci)
+	
+	void printInstructions();
+	
+	// funkcja dodaje do wektora variables nową zmienną. Zwraca true, jeśli operacja się powiedzie
+	bool declareVariable(string name);
 
-#line 77 "grammar.cpp" /* yacc.c:339  */
+#line 92 "grammar.cpp" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -151,7 +166,18 @@ extern int yydebug;
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+
+union YYSTYPE
+{
+#line 27 "grammar.ypp" /* yacc.c:355  */
+
+	char* string;
+	int integer;
+
+#line 178 "grammar.cpp" /* yacc.c:355  */
+};
+
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif
@@ -165,7 +191,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 169 "grammar.cpp" /* yacc.c:358  */
+#line 195 "grammar.cpp" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -466,10 +492,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    57,    57,    58,    60,    61,    62,    63,    65,    66,
-      68,    69,    70,    71,    72,    73,    74,    75,    76,    78,
-      79,    80,    81,    82,    83,    85,    86,    87,    88,    89,
-      90,    92,    93,    95,    96,    97
+       0,    77,    77,    81,    87,    90,    91,    94,    97,    98,
+     101,   102,   103,   104,   105,   106,   107,   108,   109,   112,
+     113,   114,   115,   116,   117,   120,   121,   122,   123,   124,
+     125,   128,   129,   132,   133,   134
 };
 #endif
 
@@ -1319,8 +1345,42 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-      
-#line 1324 "grammar.cpp" /* yacc.c:1646  */
+        case 2:
+#line 77 "grammar.ypp" /* yacc.c:1646  */
+    {
+	instructions.push_back(new Instruction("HALT"));
+	printInstructions();
+}
+#line 1355 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 3:
+#line 81 "grammar.ypp" /* yacc.c:1646  */
+    {
+	instructions.push_back(new Instruction("HALT"));
+	printInstructions();
+}
+#line 1364 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 4:
+#line 87 "grammar.ypp" /* yacc.c:1646  */
+    {
+					declareVariable((yyvsp[0].string));
+				}
+#line 1372 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 6:
+#line 91 "grammar.ypp" /* yacc.c:1646  */
+    {
+              	declareVariable((yyvsp[0].string));
+              }
+#line 1380 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+
+#line 1384 "grammar.cpp" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1548,11 +1608,31 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 99 "grammar.ypp" /* yacc.c:1906  */
+#line 137 "grammar.ypp" /* yacc.c:1906  */
 
 
 int yyerror(string s) {
+	cerr << "Line " << yylineno << ": " << s << endl;
 	return 0;
+}
+
+void printInstructions() {
+	for(int i=0; i<instructions.size(); i++) {
+		cout << instructions[i]->toString() << endl;
+	}
+}
+
+bool declareVariable(string name) {
+	// jeśli zmienna o nazwie name nie jest jeszcze zadeklarowana
+	
+	if(variables.find(name) == variables.end()) {
+		MemoryItem* memory_item = new MemoryItem(memory_pointer, name);
+		variables[name] = memory_item;
+		
+		memory_pointer++;
+	} else {
+		yyerror("Duplicate variable \"" + name + "\"");
+	}
 }
 
 
