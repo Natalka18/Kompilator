@@ -1,4 +1,4 @@
-// odpowiada komórce pamięci, przechowuje jej indeks, nazwa zmiennej,
+// odpowiada komórce pamięci lub grupie komórek w przypadku tablicy, przechowuje jej indeks, nazwę zmiennej,
 // której wartość jest w niej zapisana oraz informację o tym, czy przechowywana w komórce
 // wartość jest elementem tablicy oraz rozmiar tej tablicy
 
@@ -9,7 +9,9 @@
 
 class MemoryItem {
 	public:
-		long long index; // numer komórki pamięci
+		long long index; // numer komórki pamięci. Jeśli zmienna jest tablicą,
+						// to index oznacza numer komórki pamięci, w której
+						// znajduje się pierwszy element tablicy
 		bool isArray; // czy element w tej komórce jest elementem tablicy
 		long long size; // rozmiar tablicy, do której należy ta komórka
 		long long begin; // początkowy indeks tablicy
@@ -33,5 +35,10 @@ class MemoryItem {
 			this->size = 1;
 			this->begin = 1;
 			this->end = 1;
+		}
+		
+		// zwraca numer komórki, w której znajduje się element tablicy o indeksie i
+		long long getMemoryIndexOf(long long i) {
+			return index+i-begin;
 		}
 };

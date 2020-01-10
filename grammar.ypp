@@ -21,7 +21,11 @@
 		bool isVariable; // czy nieterminal odpowiada zwykłej zmiennej
 		bool isNumber; // czy nieterminal odpowiada zwykłej liczbie
 		string name; // nazwa zmiennej (lub tablicy)
-		string index; // nazwa zmiennej, która jest indeksem elementu tablicy
+		string index; // nazwa zmiennej, która jest indeksem elementu tablicy.
+					  // Jeśli to nie jest tablica, to index=""
+		long long index_long; // indeks elementu tablicy, któremu odpowiada ta struktura
+							  // Jeśli to nie jest tablica, to index_long=-1
+		long long num; //wartość liczby, jeśli isNumber=true
 	};
 	
 	void yyset_out(FILE* out_str);
@@ -38,11 +42,15 @@
 	// Zwraca true, jeśli operacja się powiedzie. Dodaje odpowiednie instrukcje assemblera
 	bool loadValueToVariable(struct value* value);
 	void printValue(struct value* value);
+	// funkcja dodaje do wektora variables nową zmienną tablicową o początkowym
+	// indeksie begin i końcowym indeksie end
+	bool declareArray(string name, long long begin, long long end);
 %}
 
 %union {
 	char* string;
 	int integer;
+	long long long_long;
 	struct value* value_struct;
 };
 
@@ -80,7 +88,7 @@
 %token LEQ
 %token GEQ
 
-%token<string> num
+%token<long_long> num
 %token<string> pidentifier
 %token comma
 %token semicolon
@@ -107,11 +115,15 @@ program       : DECLARE declarations BEGIN_TOKEN commands END {
 declarations  : declarations comma pidentifier {
 					declareVariable($3);
 				}
-              | declarations comma pidentifier left_bracket num colon num right_bracket
+              | declarations comma pidentifier left_bracket num colon num right_bracket {
+              	declareArray($3, $5, $7);
+              }
               | pidentifier {
               	declareVariable($1);
               }
-              | pidentifier left_bracket num colon num right_bracket
+              | pidentifier left_bracket num colon num right_bracket {
+              	declareArray($1, $3, $5);
+              }
               ;
 
 commands      : commands command
@@ -150,7 +162,16 @@ condition     : value EQ value
               ;
 
 value         : num {
-              	//$$ = $1;
+              	// robimy value z num (num jest long longiem)
+              	value* newValue = new value;
+				newValue->isArray = false;
+				newValue->isVariable = false;
+				newValue->isNumber = true;
+				newValue->index = "";
+				newValue->index_long = -1;
+				newValue->name = "";
+				newValue->num = $1;
+				$$ = newValue;
               }
               | identifier {
               	$$ = $1;
@@ -158,20 +179,34 @@ value         : num {
               ;
 
 identifier    : pidentifier {
-					//$$ = $1;
 					value* newValue = new value;
 					newValue->isArray = false;
 					newValue->isVariable = true;
 					newValue->isNumber = false;
 					newValue->index = "";
+					newValue->index_long = -1;
 					newValue->name = $1;
 					$$ = newValue;
 }
               | pidentifier left_bracket pidentifier right_bracket {
-              	$$ = NULL; //chwilowo
+              	value* newValue = new value;
+				newValue->isArray = true;
+				newValue->isVariable = false;
+				newValue->isNumber = false;
+				newValue->index = $3;
+				newValue->index_long = -1;
+				newValue->name = $1;
+				$$ = newValue;
               }
               | pidentifier left_bracket num right_bracket {
-              	$$ = NULL; //chwilowo
+              	value* newValue = new value;
+				newValue->isArray = true;
+				newValue->isVariable = false;
+				newValue->isNumber = false;
+				newValue->index = "";
+				newValue->index_long = $3;
+				newValue->name = $1;
+				$$ = newValue;
               }
               ;
 
@@ -194,32 +229,13 @@ bool declareVariable(string name) {
 		MemoryItem* memory_item = new MemoryItem(memory_pointer, name);
 		variables[name] = memory_item;
 		
+		cout<<name<<": "<<memory_pointer<<endl;
+		
 		memory_pointer++;
 	} else {
 		yyerror("Duplicate variable \"" + name + "\"");
 	}
 }
-
-//bool loadValueToVariable(string name) {
-	// jeśli zmienna o nazwie name nie jest zadeklarowana
-	//if(variables.find(name) == variables.end()) {
-		//yyerror(name + " was not declared");
-		//return false;
-	//} else {
-		// inicjalizujemy zwykłą zmienną
-		//if(!(variables[name]->isArray)) {
-			// wczytanie wartość do akumulatora
-			//instructions.push_back(new Instruction("GET"));
-			// zapisanie wartości z akumulatora do komórki o indeksie
-			// odpowiadającym zmiennej o nazwie name
-			//instructions.push_back(new Instruction("STORE", variables[name]->index));
-		//} else {
-			
-		//}
-		
-		//return true;
-	//}
-//}
 
 bool loadValueToVariable(struct value* value) {
 	// jeśli zmienna o nazwie name nie jest zadeklarowana
@@ -228,13 +244,56 @@ bool loadValueToVariable(struct value* value) {
 		return false;
 	} else {
 		if(value->isVariable) {
+			if(value->index != "" || value->index_long != -1) {
+					yyerror(value->name + " is not an array. Syntax: READ ");
+					return false;
+			}
 			// wczytanie wartość do akumulatora
 			instructions.push_back(new Instruction("GET"));
 			// zapisanie wartości z akumulatora do komórki o indeksie
 			// odpowiadającym zmiennej o nazwie name
 			instructions.push_back(new Instruction("STORE", variables[value->name]->index));
 		} else {
-			
+			if(value->isArray) {
+				// jeśli nie podano indeksu przy odwołaniu do tablicy
+				if(value->index == "" && value->index_long == -1) {
+					yyerror(value->name + " is an array. Syntax: READ " + value->name + \
+							"(index)");
+					return false;
+				} else {
+					// jeśli odwołanie do elementu tablicy następuje przez podanie liczby
+					// jako numeru indeksu
+					if(value->index_long != -1) {
+						instructions.push_back(new Instruction("GET"));
+						
+						MemoryItem* memory_item = variables[value->name];
+						
+						// numer komórki pamięci, w której należy zapisać
+						// wczytaną wartość (w ten sam sposób można ją później
+						// znaleźć)
+						long long index = memory_item->getMemoryIndexOf(value->index_long);
+						
+						instructions.push_back(new Instruction("STORE", index));
+						
+					} else { // jeśli odwołanie następuje przez podanie nazwy zmiennej
+							// jako numeru indeksu
+						// jeśli ta zmienna nie istnieje
+						if(variables.find(value->index) == variables.end()) {
+							yyerror(value->name + " was not declared");
+							return false;
+						} 
+						
+						instructions.push_back(new Instruction("GET"));
+						
+						// miejsce w pamięci, gdzie znajduje się wartość zmiennej
+						// określającej indeks tablicy
+						long long memory_index_variable = variables[value->index]->index;
+						
+						
+						
+					}
+				}
+			}
 		}
 		
 		return true;
@@ -254,5 +313,29 @@ void printValue(struct value* value) {
 			
 		}
 	}
+}
+
+
+bool declareArray(string name, long long begin, long long end) {
+	// jeśli zmienna o nazwie name nie jest jeszcze zadeklarowana
+	if(variables.find(name) == variables.end()) {
+		if(begin >= end) {
+			yyerror("Declaration of array " + name + " failed");
+			return false;
+		}
+		long long size = end-begin+1;
+		MemoryItem* memory_item = new MemoryItem(memory_pointer, true, size,
+												name, begin, end);
+		variables[name] = memory_item;
+		
+		cout<<name<<": "<<memory_pointer<<endl;
+		
+		memory_pointer = memory_pointer + size;
+	} else {
+		yyerror("Duplicate variable \"" + name + "\"");
+		return false;
+	}
+	
+	return true;
 }
 

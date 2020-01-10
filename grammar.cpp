@@ -86,7 +86,11 @@
 		bool isVariable; // czy nieterminal odpowiada zwykłej zmiennej
 		bool isNumber; // czy nieterminal odpowiada zwykłej liczbie
 		string name; // nazwa zmiennej (lub tablicy)
-		string index; // nazwa zmiennej, która jest indeksem elementu tablicy
+		string index; // nazwa zmiennej, która jest indeksem elementu tablicy.
+					  // Jeśli to nie jest tablica, to index=""
+		long long index_long; // indeks elementu tablicy, któremu odpowiada ta struktura
+							  // Jeśli to nie jest tablica, to index_long=-1
+		long long num; //wartość liczby, jeśli isNumber=true
 	};
 	
 	void yyset_out(FILE* out_str);
@@ -103,8 +107,11 @@
 	// Zwraca true, jeśli operacja się powiedzie. Dodaje odpowiednie instrukcje assemblera
 	bool loadValueToVariable(struct value* value);
 	void printValue(struct value* value);
+	// funkcja dodaje do wektora variables nową zmienną tablicową o początkowym
+	// indeksie begin i końcowym indeksie end
+	bool declareArray(string name, long long begin, long long end);
 
-#line 108 "grammar.cpp" /* yacc.c:339  */
+#line 115 "grammar.cpp" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -185,13 +192,14 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 43 "grammar.ypp" /* yacc.c:355  */
+#line 50 "grammar.ypp" /* yacc.c:355  */
 
 	char* string;
 	int integer;
+	long long long_long;
 	struct value* value_struct;
 
-#line 195 "grammar.cpp" /* yacc.c:355  */
+#line 203 "grammar.cpp" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -208,7 +216,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 212 "grammar.cpp" /* yacc.c:358  */
+#line 220 "grammar.cpp" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -509,10 +517,10 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    97,    97,   101,   107,   110,   111,   114,   117,   118,
-     121,   122,   123,   124,   125,   126,   127,   128,   131,   136,
-     137,   138,   139,   140,   141,   144,   145,   146,   147,   148,
-     149,   152,   155,   160,   170,   173
+       0,   105,   105,   109,   115,   118,   121,   124,   129,   130,
+     133,   134,   135,   136,   137,   138,   139,   140,   143,   148,
+     149,   150,   151,   152,   153,   156,   157,   158,   159,   160,
+     161,   164,   176,   181,   191,   201
 };
 #endif
 
@@ -1363,104 +1371,143 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 97 "grammar.ypp" /* yacc.c:1646  */
+#line 105 "grammar.ypp" /* yacc.c:1646  */
     {
 	instructions.push_back(new Instruction("HALT"));
 	printInstructions();
 }
-#line 1372 "grammar.cpp" /* yacc.c:1646  */
+#line 1380 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 101 "grammar.ypp" /* yacc.c:1646  */
+#line 109 "grammar.ypp" /* yacc.c:1646  */
     {
 	instructions.push_back(new Instruction("HALT"));
 	printInstructions();
 }
-#line 1381 "grammar.cpp" /* yacc.c:1646  */
-    break;
-
-  case 4:
-#line 107 "grammar.ypp" /* yacc.c:1646  */
-    {
-					declareVariable((yyvsp[0].string));
-				}
 #line 1389 "grammar.cpp" /* yacc.c:1646  */
     break;
 
-  case 6:
-#line 111 "grammar.ypp" /* yacc.c:1646  */
+  case 4:
+#line 115 "grammar.ypp" /* yacc.c:1646  */
     {
-              	declareVariable((yyvsp[0].string));
-              }
+					declareVariable((yyvsp[0].string));
+				}
 #line 1397 "grammar.cpp" /* yacc.c:1646  */
     break;
 
-  case 17:
-#line 128 "grammar.ypp" /* yacc.c:1646  */
+  case 5:
+#line 118 "grammar.ypp" /* yacc.c:1646  */
     {
-              	loadValueToVariable((yyvsp[-1].value_struct));
+              	declareArray((yyvsp[-5].string), (yyvsp[-3].long_long), (yyvsp[-1].long_long));
               }
 #line 1405 "grammar.cpp" /* yacc.c:1646  */
     break;
 
-  case 18:
-#line 131 "grammar.ypp" /* yacc.c:1646  */
+  case 6:
+#line 121 "grammar.ypp" /* yacc.c:1646  */
     {
-              	printValue((yyvsp[-1].value_struct));
+              	declareVariable((yyvsp[0].string));
               }
 #line 1413 "grammar.cpp" /* yacc.c:1646  */
     break;
 
-  case 31:
-#line 152 "grammar.ypp" /* yacc.c:1646  */
+  case 7:
+#line 124 "grammar.ypp" /* yacc.c:1646  */
     {
-              	//$$ = $1;
+              	declareArray((yyvsp[-5].string), (yyvsp[-3].long_long), (yyvsp[-1].long_long));
               }
 #line 1421 "grammar.cpp" /* yacc.c:1646  */
     break;
 
-  case 32:
-#line 155 "grammar.ypp" /* yacc.c:1646  */
+  case 17:
+#line 140 "grammar.ypp" /* yacc.c:1646  */
     {
-              	(yyval.value_struct) = (yyvsp[0].value_struct);
+              	loadValueToVariable((yyvsp[-1].value_struct));
               }
 #line 1429 "grammar.cpp" /* yacc.c:1646  */
     break;
 
-  case 33:
-#line 160 "grammar.ypp" /* yacc.c:1646  */
+  case 18:
+#line 143 "grammar.ypp" /* yacc.c:1646  */
     {
-					//$$ = $1;
+              	printValue((yyvsp[-1].value_struct));
+              }
+#line 1437 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 31:
+#line 164 "grammar.ypp" /* yacc.c:1646  */
+    {
+              	// robimy value z num (num jest long longiem)
+              	value* newValue = new value;
+				newValue->isArray = false;
+				newValue->isVariable = false;
+				newValue->isNumber = true;
+				newValue->index = "";
+				newValue->index_long = -1;
+				newValue->name = "";
+				newValue->num = (yyvsp[0].long_long);
+				(yyval.value_struct) = newValue;
+              }
+#line 1454 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 32:
+#line 176 "grammar.ypp" /* yacc.c:1646  */
+    {
+              	(yyval.value_struct) = (yyvsp[0].value_struct);
+              }
+#line 1462 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 33:
+#line 181 "grammar.ypp" /* yacc.c:1646  */
+    {
 					value* newValue = new value;
 					newValue->isArray = false;
 					newValue->isVariable = true;
 					newValue->isNumber = false;
 					newValue->index = "";
+					newValue->index_long = -1;
 					newValue->name = (yyvsp[0].string);
 					(yyval.value_struct) = newValue;
 }
-#line 1444 "grammar.cpp" /* yacc.c:1646  */
+#line 1477 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 170 "grammar.ypp" /* yacc.c:1646  */
+#line 191 "grammar.ypp" /* yacc.c:1646  */
     {
-              	(yyval.value_struct) = NULL; //chwilowo
+              	value* newValue = new value;
+				newValue->isArray = true;
+				newValue->isVariable = false;
+				newValue->isNumber = false;
+				newValue->index = (yyvsp[-1].string);
+				newValue->index_long = -1;
+				newValue->name = (yyvsp[-3].string);
+				(yyval.value_struct) = newValue;
               }
-#line 1452 "grammar.cpp" /* yacc.c:1646  */
+#line 1492 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 173 "grammar.ypp" /* yacc.c:1646  */
+#line 201 "grammar.ypp" /* yacc.c:1646  */
     {
-              	(yyval.value_struct) = NULL; //chwilowo
+              	value* newValue = new value;
+				newValue->isArray = true;
+				newValue->isVariable = false;
+				newValue->isNumber = false;
+				newValue->index = "";
+				newValue->index_long = (yyvsp[-1].long_long);
+				newValue->name = (yyvsp[-3].string);
+				(yyval.value_struct) = newValue;
               }
-#line 1460 "grammar.cpp" /* yacc.c:1646  */
+#line 1507 "grammar.cpp" /* yacc.c:1646  */
     break;
 
 
-#line 1464 "grammar.cpp" /* yacc.c:1646  */
+#line 1511 "grammar.cpp" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1688,7 +1735,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 178 "grammar.ypp" /* yacc.c:1906  */
+#line 213 "grammar.ypp" /* yacc.c:1906  */
 
 
 int yyerror(string s) {
@@ -1708,32 +1755,13 @@ bool declareVariable(string name) {
 		MemoryItem* memory_item = new MemoryItem(memory_pointer, name);
 		variables[name] = memory_item;
 		
+		cout<<name<<": "<<memory_pointer<<endl;
+		
 		memory_pointer++;
 	} else {
 		yyerror("Duplicate variable \"" + name + "\"");
 	}
 }
-
-//bool loadValueToVariable(string name) {
-	// jeśli zmienna o nazwie name nie jest zadeklarowana
-	//if(variables.find(name) == variables.end()) {
-		//yyerror(name + " was not declared");
-		//return false;
-	//} else {
-		// inicjalizujemy zwykłą zmienną
-		//if(!(variables[name]->isArray)) {
-			// wczytanie wartość do akumulatora
-			//instructions.push_back(new Instruction("GET"));
-			// zapisanie wartości z akumulatora do komórki o indeksie
-			// odpowiadającym zmiennej o nazwie name
-			//instructions.push_back(new Instruction("STORE", variables[name]->index));
-		//} else {
-			
-		//}
-		
-		//return true;
-	//}
-//}
 
 bool loadValueToVariable(struct value* value) {
 	// jeśli zmienna o nazwie name nie jest zadeklarowana
@@ -1742,13 +1770,56 @@ bool loadValueToVariable(struct value* value) {
 		return false;
 	} else {
 		if(value->isVariable) {
+			if(value->index != "" || value->index_long != -1) {
+					yyerror(value->name + " is not an array. Syntax: READ ");
+					return false;
+			}
 			// wczytanie wartość do akumulatora
 			instructions.push_back(new Instruction("GET"));
 			// zapisanie wartości z akumulatora do komórki o indeksie
 			// odpowiadającym zmiennej o nazwie name
 			instructions.push_back(new Instruction("STORE", variables[value->name]->index));
 		} else {
-			
+			if(value->isArray) {
+				// jeśli nie podano indeksu przy odwołaniu do tablicy
+				if(value->index == "" && value->index_long == -1) {
+					yyerror(value->name + " is an array. Syntax: READ " + value->name + \
+							"(index)");
+					return false;
+				} else {
+					// jeśli odwołanie do elementu tablicy następuje przez podanie liczby
+					// jako numeru indeksu
+					if(value->index_long != -1) {
+						instructions.push_back(new Instruction("GET"));
+						
+						MemoryItem* memory_item = variables[value->name];
+						
+						// numer komórki pamięci, w której należy zapisać
+						// wczytaną wartość (w ten sam sposób można ją później
+						// znaleźć)
+						long long index = memory_item->getMemoryIndexOf(value->index_long);
+						
+						instructions.push_back(new Instruction("STORE", index));
+						
+					} else { // jeśli odwołanie następuje przez podanie nazwy zmiennej
+							// jako numeru indeksu
+						// jeśli ta zmienna nie istnieje
+						if(variables.find(value->index) == variables.end()) {
+							yyerror(value->name + " was not declared");
+							return false;
+						} 
+						
+						instructions.push_back(new Instruction("GET"));
+						
+						// miejsce w pamięci, gdzie znajduje się wartość zmiennej
+						// określającej indeks tablicy
+						long long memory_index_variable = variables[value->index]->index;
+						
+						
+						
+					}
+				}
+			}
 		}
 		
 		return true;
@@ -1768,5 +1839,29 @@ void printValue(struct value* value) {
 			
 		}
 	}
+}
+
+
+bool declareArray(string name, long long begin, long long end) {
+	// jeśli zmienna o nazwie name nie jest jeszcze zadeklarowana
+	if(variables.find(name) == variables.end()) {
+		if(begin >= end) {
+			yyerror("Declaration of array " + name + " failed");
+			return false;
+		}
+		long long size = end-begin+1;
+		MemoryItem* memory_item = new MemoryItem(memory_pointer, true, size,
+												name, begin, end);
+		variables[name] = memory_item;
+		
+		cout<<name<<": "<<memory_pointer<<endl;
+		
+		memory_pointer = memory_pointer + size;
+	} else {
+		yyerror("Duplicate variable \"" + name + "\"");
+		return false;
+	}
+	
+	return true;
 }
 

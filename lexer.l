@@ -2,6 +2,7 @@
 %option yylineno
 %{
 	#include<iostream>
+	#include<string>
 	#include"grammar.hpp"
 	
 	using namespace std;
@@ -62,7 +63,7 @@ white			[ \t]
 "LEQ"				{ return LEQ; }
 "GEQ"				{ return GEQ; }
 
-{num}				{ return num; }
+{num}				{ yylval.long_long = atoll(yytext); return num; }
 {pid}				{ yylval.string = strdup(yytext); return pidentifier; }
 
 
