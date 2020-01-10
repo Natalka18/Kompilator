@@ -15,6 +15,15 @@
 	int yyerror(string);
 	extern int yylineno;
 	
+	// odpowiada nieterminalom identifier i value
+	struct value {
+		bool isArray; // czy nieterminal odpowiada elementowi tablicy
+		bool isVariable; // czy nieterminal odpowiada zwykłej zmiennej
+		bool isNumber; // czy nieterminal odpowiada zwykłej liczbie
+		string name; // nazwa zmiennej (lub tablicy)
+		string index; // nazwa zmiennej, która jest indeksem elementu tablicy
+	};
+	
 	void yyset_out(FILE* out_str);
 	FILE* yyget_out();
 	
@@ -27,15 +36,18 @@
 	bool declareVariable(string name);
 	// funkcja wczytuje wartość oraz zapisuje ją w zmiennej o nazwie name.
 	// Zwraca true, jeśli operacja się powiedzie. Dodaje odpowiednie instrukcje assemblera
-	bool loadValueToVariable(string name);
+	bool loadValueToVariable(struct value* value);
+	void printValue(struct value* value);
 %}
 
 %union {
 	char* string;
 	int integer;
+	struct value* value_struct;
 };
 
-%type<string> identifier
+%type<value_struct> identifier
+%type<value_struct> value;
 
 %token DECLARE
 %token BEGIN_TOKEN
@@ -68,7 +80,7 @@
 %token LEQ
 %token GEQ
 
-%token num
+%token<string> num
 %token<string> pidentifier
 %token comma
 %token semicolon
@@ -116,7 +128,9 @@ command       : identifier ASSIGN expression semicolon
               | READ identifier semicolon {
               	loadValueToVariable($2);
               }
-              | WRITE value semicolon
+              | WRITE value semicolon {
+              	printValue($2);
+              }
               ;
 
 expression    : value
@@ -135,15 +149,30 @@ condition     : value EQ value
               | value GEQ value
               ;
 
-value         : num
-              | identifier
+value         : num {
+              	//$$ = $1;
+              }
+              | identifier {
+              	$$ = $1;
+              }
               ;
 
 identifier    : pidentifier {
-					$$ = $1;
+					//$$ = $1;
+					value* newValue = new value;
+					newValue->isArray = false;
+					newValue->isVariable = true;
+					newValue->isNumber = false;
+					newValue->index = "";
+					newValue->name = $1;
+					$$ = newValue;
 }
-              | pidentifier left_bracket pidentifier right_bracket
-              | pidentifier left_bracket num right_bracket
+              | pidentifier left_bracket pidentifier right_bracket {
+              	$$ = NULL; //chwilowo
+              }
+              | pidentifier left_bracket num right_bracket {
+              	$$ = NULL; //chwilowo
+              }
               ;
 
 %%
@@ -171,19 +200,39 @@ bool declareVariable(string name) {
 	}
 }
 
-bool loadValueToVariable(string name) {
+//bool loadValueToVariable(string name) {
 	// jeśli zmienna o nazwie name nie jest zadeklarowana
-	if(variables.find(name) == variables.end()) {
-		yyerror(name + " was not declared");
+	//if(variables.find(name) == variables.end()) {
+		//yyerror(name + " was not declared");
+		//return false;
+	//} else {
+		// inicjalizujemy zwykłą zmienną
+		//if(!(variables[name]->isArray)) {
+			// wczytanie wartość do akumulatora
+			//instructions.push_back(new Instruction("GET"));
+			// zapisanie wartości z akumulatora do komórki o indeksie
+			// odpowiadającym zmiennej o nazwie name
+			//instructions.push_back(new Instruction("STORE", variables[name]->index));
+		//} else {
+			
+		//}
+		
+		//return true;
+	//}
+//}
+
+bool loadValueToVariable(struct value* value) {
+	// jeśli zmienna o nazwie name nie jest zadeklarowana
+	if(variables.find(value->name) == variables.end()) {
+		yyerror(value->name + " was not declared");
 		return false;
 	} else {
-		// inicjalizujemy zwykłą zmienną
-		if(!(variables[name]->isArray)) {
+		if(value->isVariable) {
 			// wczytanie wartość do akumulatora
 			instructions.push_back(new Instruction("GET"));
 			// zapisanie wartości z akumulatora do komórki o indeksie
 			// odpowiadającym zmiennej o nazwie name
-			instructions.push_back(new Instruction("STORE", variables[name]->index));
+			instructions.push_back(new Instruction("STORE", variables[value->name]->index));
 		} else {
 			
 		}
@@ -192,4 +241,18 @@ bool loadValueToVariable(string name) {
 	}
 }
 
+
+void printValue(struct value* value) {
+	if(variables.find(value->name) == variables.end()) {
+		yyerror(value->name + " was not declared");
+	} else {
+		if(value->isVariable) {
+			MemoryItem* item = variables[value->name];
+			instructions.push_back(new Instruction("LOAD", item->index));
+			instructions.push_back(new Instruction("PUT"));
+		} else {
+			
+		}
+	}
+}
 
