@@ -28,6 +28,7 @@
 		long long num; //wartość liczby, jeśli isNumber=true
 	};
 	
+	
 	void yyset_out(FILE* out_str);
 	FILE* yyget_out();
 	
@@ -52,6 +53,16 @@
 	// w której przechowywana jest wartość elementu o indeksie variable 
 	// tablicy array
 	void calculateIndexOfArrayElement(string array, string variable);
+	// generuje instrukcje, które umieszczą w akumulatorze wartość odpowiadającą
+	// strukturze value
+	void loadValueToAccumulator(struct value* value);
+	// generuje instrukcje, które umieszczą wartość value w komórce
+	// o numerze cell2.
+	// Odpowiednik funkcji loadValueToVariable, ale tam zapisywana jest w zmiennej
+	// wartość z akumulatora, a tu z dowolnej komórki.
+	// Służy do zapisywania wartości z komórki cell w zmiennej, której odpowiada
+	// struktura value.
+	void storeValueFromCell(struct value* value, long long cell);
 %}
 
 %union {
@@ -59,10 +70,12 @@
 	int integer;
 	long long long_long;
 	struct value* value_struct;
+	struct result* result_struct;
 };
 
 %type<value_struct> identifier
 %type<value_struct> value;
+%type<long_long> expression; // expression ma wartość numeru komórki, w której znajduje się wynik
 
 %token DECLARE
 %token BEGIN_TOKEN
@@ -137,7 +150,9 @@ commands      : commands command
               | command
               ;
 
-command       : identifier ASSIGN expression semicolon
+command       : identifier ASSIGN expression semicolon {
+					//storeValueFromCell($1, $3);
+				}
               | IF condition THEN commands ELSE commands ENDIF
               | IF condition THEN commands ENDIF
               | WHILE condition DO commands ENDWHILE
@@ -152,12 +167,24 @@ command       : identifier ASSIGN expression semicolon
               }
               ;
 
-expression    : value
-              | value PLUS value
-              | value MINUS value
-              | value TIMES value
-              | value DIV value
-              | value MOD value
+expression    : value {
+					$$=0;
+				}
+              | value PLUS value {
+              	$$=0;
+              }
+              | value MINUS value {
+              	$$=0;
+              }
+              | value TIMES value {
+              	$$=0;
+              }
+              | value DIV value {
+              	$$=0;
+              }
+              | value MOD value {
+              	$$=0;
+              }
               ;
 
 condition     : value EQ value
@@ -331,8 +358,54 @@ bool loadValueToVariable(struct value* value) {
 	
 }
 
+void storeValueFromCell(struct value* value, long long cell) {
+	if(value->isVariable) {
+			// wczytanie wartość do akumulatora
+			instructions.push_back(new Instruction("LOAD",cell));
+			// zapisanie wartości z akumulatora do komórki o indeksie
+			// odpowiadającym zmiennej o nazwie name
+			instructions.push_back(new Instruction("STORE", variables[value->name]->index));
+		} else {
+			if(value->isArray) {
+					// jeśli odwołanie do elementu tablicy następuje przez podanie liczby
+					// jako numeru indeksu
+					if(value->index_long != -1) {
+						instructions.push_back(new Instruction("LOAD", cell));
+						
+						MemoryItem* memory_item = variables[value->name];
+						
+						// numer komórki pamięci, w której należy zapisać
+						// wczytaną wartość (w ten sam sposób można ją później
+						// znaleźć)
+						long long index = memory_item->getMemoryIndexOf(value->index_long);
+						
+						instructions.push_back(new Instruction("STORE", index));
+						
+					} else { // jeśli odwołanie następuje przez podanie nazwy zmiennej
+							// jako numeru indeksu 
+						
+						calculateIndexOfArrayElement(value->name, value->index);
+						
+						// zapisanie tej wartości w wolnej komórce
+						instructions.push_back(new Instruction("STORE", memory_pointer));
+						// teraz indeks interesującego nas elementu tablicy jest w komórce
+						// o numerze memory_pointer
+						
+						// wczytanie wartości do akumulatora
+						instructions.push_back(new Instruction("LOAD",cell));
+						
+						// umieszczenie wczytanej wartości w komórce, która odpowiada
+						// iteresującemu nas elementowi tablicy
+						instructions.push_back(new Instruction("STOREI",memory_pointer));
+						
+					}
+			}
+		}
+}
+
 
 void printValue(struct value* value) {
+/*
 		if(value->isVariable) {
 			MemoryItem* item = variables[value->name];
 			instructions.push_back(new Instruction("LOAD", item->index));
@@ -362,6 +435,10 @@ void printValue(struct value* value) {
 				instructions.push_back(new Instruction("PUT"));
 			}
 		}
+	*/	
+		
+		loadValueToAccumulator(value);
+		instructions.push_back(new Instruction("PUT"));
 }
 
 
@@ -500,6 +577,34 @@ void generateNumberAndStore(long long number, long long cell) {
 		}
 		
 		instructions.push_back(new Instruction("STORE",cell));
+	}
+}
+
+void loadValueToAccumulator(struct value* value) {
+
+	if(value->isVariable) {
+		MemoryItem* item = variables[value->name];
+		instructions.push_back(new Instruction("LOAD", item->index));
+	} else if(value->isArray) {
+		// jeśli odwołanie do elementu tablicy następuje przez podanie liczby
+		// jako numeru indeksu
+		if(value->index_long != -1) {
+			
+			MemoryItem* memory_item = variables[value->name];
+			long long index = memory_item->getMemoryIndexOf(value->index_long);
+			instructions.push_back(new Instruction("LOAD", index));
+						
+		} else { // jeśli odwołanie następuje przez podanie nazwy zmiennej
+				// jako numeru indeksu 
+						
+			calculateIndexOfArrayElement(value->name, value->index);
+			// teraz w akumulatorze znajduje się numer komórki,
+			// w której przechowywana jest wartość interesuącego nas elementu tablicy
+				
+			// ładujemy do akumulatora wartość z komórki o numerze równym
+			// wartości przechowywanej w akumulatorze
+			instructions.push_back(new Instruction("LOADI",0));
+		}
 	}
 }
 

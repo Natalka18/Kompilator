@@ -93,6 +93,7 @@
 		long long num; //wartość liczby, jeśli isNumber=true
 	};
 	
+	
 	void yyset_out(FILE* out_str);
 	FILE* yyget_out();
 	
@@ -117,8 +118,18 @@
 	// w której przechowywana jest wartość elementu o indeksie variable 
 	// tablicy array
 	void calculateIndexOfArrayElement(string array, string variable);
+	// generuje instrukcje, które umieszczą w akumulatorze wartość odpowiadającą
+	// strukturze value
+	void loadValueToAccumulator(struct value* value);
+	// generuje instrukcje, które umieszczą wartość value w komórce
+	// o numerze cell2.
+	// Odpowiednik funkcji loadValueToVariable, ale tam zapisywana jest w zmiennej
+	// wartość z akumulatora, a tu z dowolnej komórki.
+	// Służy do zapisywania wartości z komórki cell w zmiennej, której odpowiada
+	// struktura value.
+	void storeValueFromCell(struct value* value, long long cell);
 
-#line 122 "grammar.cpp" /* yacc.c:339  */
+#line 133 "grammar.cpp" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -199,14 +210,15 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 57 "grammar.ypp" /* yacc.c:355  */
+#line 68 "grammar.ypp" /* yacc.c:355  */
 
 	char* string;
 	int integer;
 	long long long_long;
 	struct value* value_struct;
+	struct result* result_struct;
 
-#line 210 "grammar.cpp" /* yacc.c:355  */
+#line 222 "grammar.cpp" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -223,7 +235,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 227 "grammar.cpp" /* yacc.c:358  */
+#line 239 "grammar.cpp" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -522,12 +534,12 @@ static const yytype_uint8 yytranslate[] =
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_uint8 yyrline[] =
+static const yytype_uint16 yyrline[] =
 {
-       0,   112,   112,   116,   122,   125,   128,   131,   136,   137,
-     140,   141,   142,   143,   144,   145,   146,   147,   150,   155,
-     156,   157,   158,   159,   160,   163,   164,   165,   166,   167,
-     168,   171,   183,   188,   208,   237
+       0,   125,   125,   129,   135,   138,   141,   144,   149,   150,
+     153,   156,   157,   158,   159,   160,   161,   162,   165,   170,
+     173,   176,   179,   182,   185,   190,   191,   192,   193,   194,
+     195,   198,   210,   215,   235,   264
 };
 #endif
 
@@ -1378,73 +1390,129 @@ yyreduce:
   switch (yyn)
     {
         case 2:
-#line 112 "grammar.ypp" /* yacc.c:1646  */
+#line 125 "grammar.ypp" /* yacc.c:1646  */
     {
 	instructions.push_back(new Instruction("HALT"));
 	printInstructions();
 }
-#line 1387 "grammar.cpp" /* yacc.c:1646  */
+#line 1399 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 116 "grammar.ypp" /* yacc.c:1646  */
+#line 129 "grammar.ypp" /* yacc.c:1646  */
     {
 	instructions.push_back(new Instruction("HALT"));
 	printInstructions();
 }
-#line 1396 "grammar.cpp" /* yacc.c:1646  */
+#line 1408 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 122 "grammar.ypp" /* yacc.c:1646  */
+#line 135 "grammar.ypp" /* yacc.c:1646  */
     {
 					declareVariable((yyvsp[0].string));
 				}
-#line 1404 "grammar.cpp" /* yacc.c:1646  */
+#line 1416 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 125 "grammar.ypp" /* yacc.c:1646  */
+#line 138 "grammar.ypp" /* yacc.c:1646  */
     {
               	declareArray((yyvsp[-5].string), (yyvsp[-3].long_long), (yyvsp[-1].long_long));
               }
-#line 1412 "grammar.cpp" /* yacc.c:1646  */
+#line 1424 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 128 "grammar.ypp" /* yacc.c:1646  */
+#line 141 "grammar.ypp" /* yacc.c:1646  */
     {
               	declareVariable((yyvsp[0].string));
               }
-#line 1420 "grammar.cpp" /* yacc.c:1646  */
+#line 1432 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 131 "grammar.ypp" /* yacc.c:1646  */
+#line 144 "grammar.ypp" /* yacc.c:1646  */
     {
               	declareArray((yyvsp[-5].string), (yyvsp[-3].long_long), (yyvsp[-1].long_long));
               }
-#line 1428 "grammar.cpp" /* yacc.c:1646  */
+#line 1440 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 10:
+#line 153 "grammar.ypp" /* yacc.c:1646  */
+    {
+					//storeValueFromCell($1, $3);
+				}
+#line 1448 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 147 "grammar.ypp" /* yacc.c:1646  */
+#line 162 "grammar.ypp" /* yacc.c:1646  */
     {
               	loadValueToVariable((yyvsp[-1].value_struct));
               }
-#line 1436 "grammar.cpp" /* yacc.c:1646  */
+#line 1456 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 150 "grammar.ypp" /* yacc.c:1646  */
+#line 165 "grammar.ypp" /* yacc.c:1646  */
     {
               	printValue((yyvsp[-1].value_struct));
               }
-#line 1444 "grammar.cpp" /* yacc.c:1646  */
+#line 1464 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 19:
+#line 170 "grammar.ypp" /* yacc.c:1646  */
+    {
+					(yyval.long_long)=0;
+				}
+#line 1472 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 20:
+#line 173 "grammar.ypp" /* yacc.c:1646  */
+    {
+              	(yyval.long_long)=0;
+              }
+#line 1480 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 21:
+#line 176 "grammar.ypp" /* yacc.c:1646  */
+    {
+              	(yyval.long_long)=0;
+              }
+#line 1488 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 22:
+#line 179 "grammar.ypp" /* yacc.c:1646  */
+    {
+              	(yyval.long_long)=0;
+              }
+#line 1496 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 23:
+#line 182 "grammar.ypp" /* yacc.c:1646  */
+    {
+              	(yyval.long_long)=0;
+              }
+#line 1504 "grammar.cpp" /* yacc.c:1646  */
+    break;
+
+  case 24:
+#line 185 "grammar.ypp" /* yacc.c:1646  */
+    {
+              	(yyval.long_long)=0;
+              }
+#line 1512 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 171 "grammar.ypp" /* yacc.c:1646  */
+#line 198 "grammar.ypp" /* yacc.c:1646  */
     {
               	// robimy value z num (num jest long longiem)
               	value* newValue = new value;
@@ -1457,19 +1525,19 @@ yyreduce:
 				newValue->num = (yyvsp[0].long_long);
 				(yyval.value_struct) = newValue;
               }
-#line 1461 "grammar.cpp" /* yacc.c:1646  */
+#line 1529 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 183 "grammar.ypp" /* yacc.c:1646  */
+#line 210 "grammar.ypp" /* yacc.c:1646  */
     {
               	(yyval.value_struct) = (yyvsp[0].value_struct);
               }
-#line 1469 "grammar.cpp" /* yacc.c:1646  */
+#line 1537 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 188 "grammar.ypp" /* yacc.c:1646  */
+#line 215 "grammar.ypp" /* yacc.c:1646  */
     {
 					// jeśli zmienna pidentifier nie jest zadeklarowana
 					if(variables.find((yyvsp[0].string)) == variables.end()) {
@@ -1490,11 +1558,11 @@ yyreduce:
 						(yyval.value_struct) = newValue;
 					}
 }
-#line 1494 "grammar.cpp" /* yacc.c:1646  */
+#line 1562 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 208 "grammar.ypp" /* yacc.c:1646  */
+#line 235 "grammar.ypp" /* yacc.c:1646  */
     {
               		// jeśli tablica nie została zadeklarowana 
               		if(variables.find((yyvsp[-3].string)) == variables.end()) {
@@ -1522,11 +1590,11 @@ yyreduce:
 						(yyval.value_struct) = newValue;
 					}
 				}
-#line 1526 "grammar.cpp" /* yacc.c:1646  */
+#line 1594 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 237 "grammar.ypp" /* yacc.c:1646  */
+#line 264 "grammar.ypp" /* yacc.c:1646  */
     {
               
               	if(variables.find((yyvsp[-3].string)) == variables.end()) { // jeśli tablica nie jest zadeklarowana
@@ -1546,11 +1614,11 @@ yyreduce:
 						(yyval.value_struct) = newValue;
 				}
               }
-#line 1550 "grammar.cpp" /* yacc.c:1646  */
+#line 1618 "grammar.cpp" /* yacc.c:1646  */
     break;
 
 
-#line 1554 "grammar.cpp" /* yacc.c:1646  */
+#line 1622 "grammar.cpp" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1778,7 +1846,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 258 "grammar.ypp" /* yacc.c:1906  */
+#line 285 "grammar.ypp" /* yacc.c:1906  */
 
 
 int yyerror(string s) {
@@ -1855,8 +1923,54 @@ bool loadValueToVariable(struct value* value) {
 	
 }
 
+void storeValueFromCell(struct value* value, long long cell) {
+	if(value->isVariable) {
+			// wczytanie wartość do akumulatora
+			instructions.push_back(new Instruction("LOAD",cell));
+			// zapisanie wartości z akumulatora do komórki o indeksie
+			// odpowiadającym zmiennej o nazwie name
+			instructions.push_back(new Instruction("STORE", variables[value->name]->index));
+		} else {
+			if(value->isArray) {
+					// jeśli odwołanie do elementu tablicy następuje przez podanie liczby
+					// jako numeru indeksu
+					if(value->index_long != -1) {
+						instructions.push_back(new Instruction("LOAD", cell));
+						
+						MemoryItem* memory_item = variables[value->name];
+						
+						// numer komórki pamięci, w której należy zapisać
+						// wczytaną wartość (w ten sam sposób można ją później
+						// znaleźć)
+						long long index = memory_item->getMemoryIndexOf(value->index_long);
+						
+						instructions.push_back(new Instruction("STORE", index));
+						
+					} else { // jeśli odwołanie następuje przez podanie nazwy zmiennej
+							// jako numeru indeksu 
+						
+						calculateIndexOfArrayElement(value->name, value->index);
+						
+						// zapisanie tej wartości w wolnej komórce
+						instructions.push_back(new Instruction("STORE", memory_pointer));
+						// teraz indeks interesującego nas elementu tablicy jest w komórce
+						// o numerze memory_pointer
+						
+						// wczytanie wartości do akumulatora
+						instructions.push_back(new Instruction("LOAD",cell));
+						
+						// umieszczenie wczytanej wartości w komórce, która odpowiada
+						// iteresującemu nas elementowi tablicy
+						instructions.push_back(new Instruction("STOREI",memory_pointer));
+						
+					}
+			}
+		}
+}
+
 
 void printValue(struct value* value) {
+/*
 		if(value->isVariable) {
 			MemoryItem* item = variables[value->name];
 			instructions.push_back(new Instruction("LOAD", item->index));
@@ -1886,6 +2000,10 @@ void printValue(struct value* value) {
 				instructions.push_back(new Instruction("PUT"));
 			}
 		}
+	*/	
+		
+		loadValueToAccumulator(value);
+		instructions.push_back(new Instruction("PUT"));
 }
 
 
@@ -2024,6 +2142,34 @@ void generateNumberAndStore(long long number, long long cell) {
 		}
 		
 		instructions.push_back(new Instruction("STORE",cell));
+	}
+}
+
+void loadValueToAccumulator(struct value* value) {
+
+	if(value->isVariable) {
+		MemoryItem* item = variables[value->name];
+		instructions.push_back(new Instruction("LOAD", item->index));
+	} else if(value->isArray) {
+		// jeśli odwołanie do elementu tablicy następuje przez podanie liczby
+		// jako numeru indeksu
+		if(value->index_long != -1) {
+			
+			MemoryItem* memory_item = variables[value->name];
+			long long index = memory_item->getMemoryIndexOf(value->index_long);
+			instructions.push_back(new Instruction("LOAD", index));
+						
+		} else { // jeśli odwołanie następuje przez podanie nazwy zmiennej
+				// jako numeru indeksu 
+						
+			calculateIndexOfArrayElement(value->name, value->index);
+			// teraz w akumulatorze znajduje się numer komórki,
+			// w której przechowywana jest wartość interesuącego nas elementu tablicy
+				
+			// ładujemy do akumulatora wartość z komórki o numerze równym
+			// wartości przechowywanej w akumulatorze
+			instructions.push_back(new Instruction("LOADI",0));
+		}
 	}
 }
 
