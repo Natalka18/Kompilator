@@ -48,6 +48,10 @@
 	// generuje instrukcje assemblerowe, które wygenerują liczbę number
 	// i umieszczą ją w komórce pamięci o numerze cell
 	void generateNumberAndStore(long long number, long long cell);
+	// generuje instrukcje, które umieszczą w akumulatorze numer komórki,
+	// w której przechowywana jest wartość elementu o indeksie variable 
+	// tablicy array
+	void calculateIndexOfArrayElement(string array, string variable);
 %}
 
 %union {
@@ -305,13 +309,19 @@ bool loadValueToVariable(struct value* value) {
 					} else { // jeśli odwołanie następuje przez podanie nazwy zmiennej
 							// jako numeru indeksu 
 						
+						calculateIndexOfArrayElement(value->name, value->index);
+						
+						// zapisanie tej wartości w wolnej komórce
+						instructions.push_back(new Instruction("STORE", memory_pointer));
+						// teraz indeks interesującego nas elementu tablicy jest w komórce
+						// o numerze memory_pointer
+						
+						// wczytanie wartości do akumulatora
 						instructions.push_back(new Instruction("GET"));
 						
-						// miejsce w pamięci, gdzie znajduje się wartość zmiennej
-						// określającej indeks tablicy
-						long long memory_index_variable = variables[value->index]->index;
-						
-						
+						// umieszczenie wczytanej wartości w komórce, która odpowiada
+						// iteresującemu nas elementowi tablicy
+						instructions.push_back(new Instruction("STOREI",memory_pointer));
 						
 					}
 			}
@@ -327,8 +337,30 @@ void printValue(struct value* value) {
 			MemoryItem* item = variables[value->name];
 			instructions.push_back(new Instruction("LOAD", item->index));
 			instructions.push_back(new Instruction("PUT"));
-		} else {
+		} else if(value->isArray) {
+			// jeśli odwołanie do elementu tablicy następuje przez podanie liczby
+			// jako numeru indeksu
+			if(value->index_long != -1) {
 			
+				MemoryItem* memory_item = variables[value->name];
+				long long index = memory_item->getMemoryIndexOf(value->index_long);
+				instructions.push_back(new Instruction("LOAD", index));
+				instructions.push_back(new Instruction("PUT"));
+						
+			} else { // jeśli odwołanie następuje przez podanie nazwy zmiennej
+							// jako numeru indeksu 
+						
+				calculateIndexOfArrayElement(value->name, value->index);
+				// teraz w akumulatorze znajduje się numer komórki,
+				// w której przechowywana jest wartość interesuącego nas elementu tablicy
+				
+				// ładujemy do akumulatora wartość z komórki o numerze równym
+				// wartości przechowywanej w akumulatorze
+				instructions.push_back(new Instruction("LOADI",0));
+				
+				// wyświetlamy wartość z akumulatora
+				instructions.push_back(new Instruction("PUT"));
+			}
 		}
 }
 
@@ -375,6 +407,22 @@ bool declareArray(string name, long long begin, long long end) {
 	
 	return true;
 }
+
+
+void calculateIndexOfArrayElement(string array, string variable) {
+	// miejsce w pamięci, gdzie znajduje się wartość zmiennej
+	// określającej indeks tablicy
+	long long variableCell = variables[variable]->index;
+	
+	// ładujemy wartość zmiennej określającej indeks do akumulatora
+	instructions.push_back(new Instruction("LOAD",variableCell));
+	
+	// dodajemy do niej wartość umieszczoną za tablicą (index-begin, 
+	// patrz MemoryItem, getMemoryIndexOf)
+	instructions.push_back(new Instruction("ADD",variables[array]->additionalCell));
+}
+
+
 
 // zamienia liczbę dziesiętną dodatnią na binarną i zapisuje ją w stringu
 string decToBin(long long number) {
