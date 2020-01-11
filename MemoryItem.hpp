@@ -18,6 +18,10 @@ class MemoryItem {
 		long long end; // końcowy indeks tablicy
 		string name; // nazwa zmiennej, której wartość jest zapisana w tej komórce
 		
+		long long additionalCell; // numer komórki, w której przechowywana jest wartość 
+		//index - begin potrzebna do obliczania, w której komórce znajduje się element
+		// tablicy przy odwołaniu typu tablica(zmienna)
+		
 		MemoryItem(long long index, bool isArray, long long size, string name,
 					long long begin, long long end) {
 			this->index = index;

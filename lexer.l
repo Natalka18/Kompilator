@@ -14,7 +14,7 @@ num				[-]?[0-9]+
 pid				[_a-z]+
 white			[ \t]
 
-%s COMMENT
+%x COMMENT
 
 %%
 
