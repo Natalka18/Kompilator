@@ -57,7 +57,7 @@
 	// strukturze value
 	void loadValueToAccumulator(struct value* value);
 	// generuje instrukcje, które umieszczą wartość value w komórce
-	// o numerze cell2.
+	// o numerze cell.
 	// Odpowiednik funkcji loadValueToVariable, ale tam zapisywana jest w zmiennej
 	// wartość z akumulatora, a tu z dowolnej komórki.
 	// Służy do zapisywania wartości z komórki cell w zmiennej, której odpowiada
@@ -151,7 +151,7 @@ commands      : commands command
               ;
 
 command       : identifier ASSIGN expression semicolon {
-					//storeValueFromCell($1, $3);
+					storeValueFromCell($1, $3);
 				}
               | IF condition THEN commands ELSE commands ENDIF
               | IF condition THEN commands ENDIF
@@ -168,7 +168,16 @@ command       : identifier ASSIGN expression semicolon {
               ;
 
 expression    : value {
-					$$=0;
+					loadValueToAccumulator($1);
+					
+					// umieścimy w wolnej komórce i zwiększymy wskaźnik wolnej komórki
+					instructions.push_back(new Instruction("STORE",memory_pointer));
+					
+					// wartość wyrażenia umieściliśmy w komórce memory_pointer
+					$$=memory_pointer;
+					
+					memory_pointer++; // póżniej komórka z wartością wyrażenia nie jest potrzebna
+									  // trzeba to zmienić
 				}
               | value PLUS value {
               	$$=0;
@@ -304,7 +313,7 @@ bool declareVariable(string name) {
 		memory_pointer++;
 		
 		//test
-		cout<<name + ": "<<variables[name]->index<<endl;
+		//cout<<name + ": "<<variables[name]->index<<endl;
 	} else {
 		yyerror("Duplicate variable \"" + name + "\"");
 	}
@@ -399,7 +408,7 @@ void storeValueFromCell(struct value* value, long long cell) {
 						instructions.push_back(new Instruction("STOREI",memory_pointer));
 						
 					}
-			}
+			} 
 		}
 }
 
@@ -475,7 +484,7 @@ bool declareArray(string name, long long begin, long long end) {
 		// należy dodać do numeru indeksu wartość znajdującą się za tablicą
 		
 		//test
-		cout<<name + ": "<<variables[name]->index<<endl;
+		//cout<<name + ": "<<variables[name]->index<<endl;
 		
 	} else {
 		yyerror("Duplicate variable \"" + name + "\"");
@@ -557,6 +566,8 @@ void generateNumberAndStore(long long number, long long cell) {
 		number *= -1;
 		string b = decToBin(number);
 		
+		cout<<b<<endl;
+		
 		// wygenerowanie jedynki potrzebnej do shiftów (w komórce memory_pointer)
 		// nie jest później potrzebna, więc nie zmieniamy
 		// wartości memory_pointer
@@ -572,7 +583,7 @@ void generateNumberAndStore(long long number, long long cell) {
 			instructions.push_back(new Instruction("SHIFT",memory_pointer));
 			
 			if(b[i] == '1') {
-				instructions.push_back(new Instruction("INC"));
+				instructions.push_back(new Instruction("DEC"));
 			}
 		}
 		
@@ -605,6 +616,9 @@ void loadValueToAccumulator(struct value* value) {
 			// wartości przechowywanej w akumulatorze
 			instructions.push_back(new Instruction("LOADI",0));
 		}
+	} else if(value->isNumber) {
+		// wygenerowanie liczby value->num i umieszczenie w akumulatorze
+		generateNumberAndStore(value->num, 0);
 	}
 }
 
