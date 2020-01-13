@@ -78,6 +78,8 @@
 	void add(struct value* value1, struct value* value2, long long result_cell);
 	// odejmuje liczby z value1 i value2 i umieszcza wynik w komórce o numerze result_cell
 	void subtract(struct value* value1, struct value* value2, long long result_cell);
+	// mnoży liczby z value1 i value2 i umieszcza wynik w komórce o numerze result_cell
+	void multiply(struct value* value1, struct value* value2, long long result_cell);
 %}
 
 %union {
@@ -207,7 +209,9 @@ expression    : value {
               	memory_pointer++;
               }
               | value TIMES value {
-              	$$=0;
+              	multiply($1,$3,memory_pointer);
+              	$$=memory_pointer;
+              	memory_pointer++;
               }
               | value DIV value {
               	$$=0;
@@ -270,7 +274,7 @@ identifier    : pidentifier {
               		} else if(!variables[$1]->isArray) { // jeśli to nie jest tablica
               			yyerror(string($1) + " is not an array");
               			return 1;
-              		} else if(variables.find($3) == variables.end()) { // jeśli indeks nie jest zadeklarowyany
+              		} else if(variables.find($3) == variables.end()) { // jeśli indeks nie jest zadeklarowany
               			yyerror(string($3) + " was not declared");
               			return 1;
               		} else if(variables[$3]->isArray) { // jeśli indeks jest tablicą
@@ -645,6 +649,104 @@ void add(struct value* value1, struct value* value2, long long result_cell) {
 		
 		instructions.push_back(new Instruction("ADD",memory_pointer));
 		instructions.push_back(new Instruction("STORE",result_cell));
+	}
+}
+
+void multiply(struct value* value1, struct value* value2, long long result_cell) {
+	if(value1->isNumber && value2->isNumber) { // jeśli obie wartości to znane liczby
+		long long result = value1->num * value2->num;
+		
+		generateNumberAndStore(result, result_cell);
+	} else {
+		loadValueToAccumulator(value1);
+		instructions.push_back(new Instruction("STORE",memory_pointer));
+		long long a = memory_pointer;
+		// teraz w komórce o numerze a znajduje się value1
+		
+		memory_pointer++;
+		
+		loadValueToAccumulator(value2);
+		instructions.push_back(new Instruction("STORE",memory_pointer));
+		long long b = memory_pointer;
+		// teraz w komórce o numerze b znajduje się value2
+		
+		memory_pointer++;
+		
+		// generowanie stałych
+		instructions.push_back(new Instruction("SUB",0));
+		long long zero = memory_pointer; // komórka, w której trzymamy zero
+		instructions.push_back(new Instruction("STORE",zero));
+		memory_pointer++;
+		
+		instructions.push_back(new Instruction("INC"));
+		long long one = memory_pointer; // komórka, w której trzymamy jedynkę
+		instructions.push_back(new Instruction("STORE",one));
+		memory_pointer++;
+		
+		instructions.push_back(new Instruction("DEC"));
+		instructions.push_back(new Instruction("DEC"));
+		long long minus_one = memory_pointer; // komórka, w której trzymamy minus jedynkę
+		instructions.push_back(new Instruction("STORE",minus_one));
+		memory_pointer++;
+		
+		// 
+		
+		// dodatkowe komórki
+		long long c = memory_pointer;
+		memory_pointer++;
+		long long d = memory_pointer;
+		memory_pointer++;
+		
+		instructions.push_back(new Instruction("LOAD",b));
+		instructions.push_back(new Instruction("INC"));
+		instructions.push_back(new Instruction("JPOS", instructions.size() + 22));
+		
+		instructions.push_back(new Instruction("LOAD",a));
+		instructions.push_back(new Instruction("INC"));
+		instructions.push_back(new Instruction("JPOS", instructions.size() + 13));
+		
+		instructions.push_back(new Instruction("LOAD",a));
+		instructions.push_back(new Instruction("SHIFT",one));
+		instructions.push_back(new Instruction("STORE", c));
+		instructions.push_back(new Instruction("LOAD",a));
+		instructions.push_back(new Instruction("SUB",c));
+		instructions.push_back(new Instruction("STORE",a));
+		instructions.push_back(new Instruction("LOAD",b));
+		instructions.push_back(new Instruction("SHIFT", one));
+		instructions.push_back(new Instruction("STORE",c));
+		instructions.push_back(new Instruction("LOAD",b));
+		instructions.push_back(new Instruction("SUB",c));
+		instructions.push_back(new Instruction("STORE",b));
+		
+		instructions.push_back(new Instruction("LOAD",a));
+		instructions.push_back(new Instruction("STORE",c));
+		instructions.push_back(new Instruction("LOAD",b));
+		instructions.push_back(new Instruction("STORE",a));
+		instructions.push_back(new Instruction("LOAD",c));
+		instructions.push_back(new Instruction("STORE",b));
+		
+		instructions.push_back(new Instruction("LOAD",b));
+		instructions.push_back(new Instruction("JZERO",instructions.size() + 14));
+		instructions.push_back(new Instruction("STORE",d));
+		instructions.push_back(new Instruction("SHIFT",minus_one));
+		instructions.push_back(new Instruction("STORE",b));
+		instructions.push_back(new Instruction("SHIFT",one));
+		instructions.push_back(new Instruction("SUB",d));
+		instructions.push_back(new Instruction("JZERO",instructions.size() + 4));
+		instructions.push_back(new Instruction("LOAD",a));
+		instructions.push_back(new Instruction("ADD",zero));
+		instructions.push_back(new Instruction("STORE",zero));
+		instructions.push_back(new Instruction("LOAD",a));
+		instructions.push_back(new Instruction("SHIFT",one));
+		instructions.push_back(new Instruction("STORE",a));
+		instructions.push_back(new Instruction("JUMP", instructions.size() - 14));
+		instructions.push_back(new Instruction("LOAD",zero));
+		
+		// umieszczenie wyniku we właściwej komórce
+		instructions.push_back(new Instruction("STORE",result_cell));
+		
+		// na końcu odpowiednio zmniejszyć wartość memory_pointer
+		memory_pointer = memory_pointer - 7;
 	}
 }
 
