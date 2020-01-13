@@ -76,6 +76,8 @@
 	struct cell* findValueInMemory(struct value* value);
 	// dodaje liczby z value1 i value2 i umieszcza wynik w komórce o numerze result_cell
 	void add(struct value* value1, struct value* value2, long long result_cell);
+	// odejmuje liczby z value1 i value2 i umieszcza wynik w komórce o numerze result_cell
+	void subtract(struct value* value1, struct value* value2, long long result_cell);
 %}
 
 %union {
@@ -200,7 +202,9 @@ expression    : value {
               	memory_pointer++;
               }
               | value MINUS value {
-              	$$=0;
+              	subtract($1,$3,memory_pointer);
+              	$$=memory_pointer;
+              	memory_pointer++;
               }
               | value TIMES value {
               	$$=0;
@@ -640,6 +644,26 @@ void add(struct value* value1, struct value* value2, long long result_cell) {
 		memory_pointer--;
 		
 		instructions.push_back(new Instruction("ADD",memory_pointer));
+		instructions.push_back(new Instruction("STORE",result_cell));
+	}
+}
+
+void subtract(struct value* value1, struct value* value2, long long result_cell) {
+	if(value1->isNumber && value2->isNumber) { // jeśli obie wartości to znane liczby
+		long long result = value1->num - value2->num;
+		
+		generateNumberAndStore(result, result_cell);
+	} else {
+		loadValueToAccumulator(value2);
+		instructions.push_back(new Instruction("STORE",memory_pointer));
+		// teraz w komórce memory_pointer znajduje się value1
+		
+		memory_pointer++;
+		
+		loadValueToAccumulator(value1);
+		memory_pointer--;
+		
+		instructions.push_back(new Instruction("SUB",memory_pointer));
 		instructions.push_back(new Instruction("STORE",result_cell));
 	}
 }
