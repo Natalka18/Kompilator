@@ -80,6 +80,9 @@
 	void subtract(struct value* value1, struct value* value2, long long result_cell);
 	// mnoży liczby z value1 i value2 i umieszcza wynik w komórce o numerze result_cell
 	void multiply(struct value* value1, struct value* value2, long long result_cell);
+	// dzieli liczby z value1 i value2 i umieszcza wynik w komórce o numerze result_cell.
+	// Jeśli mod jest true, to zamiast wyniku dzielenia umieszcza resztę w result_cell
+	void divide(struct value* value1, struct value* value2, long long result_cell, bool mod);
 %}
 
 %union {
@@ -214,10 +217,14 @@ expression    : value {
               	memory_pointer++;
               }
               | value DIV value {
-              	$$=0;
+              	divide($1,$3,memory_pointer,false);
+              	$$=memory_pointer;
+              	memory_pointer++;
               }
               | value MOD value {
-              	$$=0;
+              	divide($1,$3,memory_pointer,true);
+              	$$=memory_pointer;
+              	memory_pointer++;
               }
               ;
 
@@ -748,6 +755,204 @@ void multiply(struct value* value1, struct value* value2, long long result_cell)
 		// na końcu odpowiednio zmniejszyć wartość memory_pointer
 		memory_pointer = memory_pointer - 7;
 	}
+}
+
+void divide(struct value* value1, struct value* value2, long long result_cell, bool mod) {
+	long long a = memory_pointer;
+	loadValueToAccumulator(value1);
+	instructions.push_back(new Instruction("STORE",a));
+	memory_pointer++;
+	
+	long long b = memory_pointer;
+	loadValueToAccumulator(value2);
+	instructions.push_back(new Instruction("STORE",b));
+	memory_pointer++;
+	
+	// przydzielenie numerów komórek do odpowiednich wartości
+	
+	long long result = memory_pointer;
+	memory_pointer++;
+	long long one = memory_pointer;
+	memory_pointer++;
+	long long minus_one = memory_pointer;
+	memory_pointer++;
+	long long temp = memory_pointer;
+	memory_pointer++;
+	long long old_b = memory_pointer;
+	memory_pointer++;
+	long long a_sign = memory_pointer;
+	memory_pointer++;
+	long long b_sign = memory_pointer;
+	memory_pointer++;
+	long long pom = memory_pointer;
+	memory_pointer++;
+	
+	// dzielenie z pliku dzielenie2.mr
+	
+	// wygenerowanie stałych
+	instructions.push_back(new Instruction("SUB",0));
+	instructions.push_back(new Instruction("STORE",result));
+	instructions.push_back(new Instruction("INC"));
+	instructions.push_back(new Instruction("STORE",one));
+	instructions.push_back(new Instruction("STORE",temp));
+	instructions.push_back(new Instruction("STORE",b_sign));
+	instructions.push_back(new Instruction("STORE",a_sign));
+	instructions.push_back(new Instruction("DEC"));
+	instructions.push_back(new Instruction("DEC"));
+	instructions.push_back(new Instruction("STORE",minus_one));
+	
+	// wczytanie wartości, którą trzeba podzielić.
+	// w pliku dzielenie2.mr w tym miejscu jest GET
+	//loadValueToAccumulator(value1);
+	instructions.push_back(new Instruction("LOAD",a));
+	instructions.push_back(new Instruction("STORE",a));
+	
+	// tu zajmujemy się przypadkiem ujemnego a
+	instructions.push_back(new Instruction("INC"));
+	instructions.push_back(new Instruction("JPOS",instructions.size() + 10));
+	instructions.push_back(new Instruction("DEC"));
+	instructions.push_back(new Instruction("STORE",a));
+	instructions.push_back(new Instruction("SHIFT",one));
+	instructions.push_back(new Instruction("STORE",pom));
+	instructions.push_back(new Instruction("LOAD",minus_one));
+	instructions.push_back(new Instruction("STORE",a_sign));
+	instructions.push_back(new Instruction("LOAD",a));
+	instructions.push_back(new Instruction("SUB",pom));
+	instructions.push_back(new Instruction("STORE",a));
+	
+	
+	// wczytanie wartości dzielnika.
+	// w pliku dzielenie2.mr w tym miejscu jest GET
+	//loadValueToAccumulator(value2);
+	instructions.push_back(new Instruction("LOAD",b));
+	instructions.push_back(new Instruction("STORE",b));
+	
+	instructions.push_back(new Instruction("JZERO",instructions.size() + 45));
+	instructions.push_back(new Instruction("STORE",old_b));
+	
+	// przypadek ujemnego b
+	instructions.push_back(new Instruction("INC"));
+	instructions.push_back(new Instruction("JPOS",instructions.size() + 11));
+	instructions.push_back(new Instruction("DEC"));
+	instructions.push_back(new Instruction("STORE",b));
+	instructions.push_back(new Instruction("SHIFT",one));
+	instructions.push_back(new Instruction("STORE",pom));
+	instructions.push_back(new Instruction("LOAD",minus_one));
+	instructions.push_back(new Instruction("STORE",b_sign));
+	instructions.push_back(new Instruction("LOAD",b));
+	instructions.push_back(new Instruction("SUB",pom));
+	instructions.push_back(new Instruction("STORE",b));
+	instructions.push_back(new Instruction("STORE",old_b));
+	
+	//pętla 1
+	instructions.push_back(new Instruction("LOAD",a));
+	instructions.push_back(new Instruction("SUB",b));
+	instructions.push_back(new Instruction("JNEG",instructions.size() + 8));
+	
+	instructions.push_back(new Instruction("LOAD",b));
+	instructions.push_back(new Instruction("SHIFT",one));
+	instructions.push_back(new Instruction("STORE",b));
+	instructions.push_back(new Instruction("LOAD",temp));
+	instructions.push_back(new Instruction("SHIFT",one));
+	instructions.push_back(new Instruction("STORE",temp));
+	instructions.push_back(new Instruction("JUMP",instructions.size() - 9));
+	
+	//pętla 2
+	instructions.push_back(new Instruction("LOAD",a));
+	instructions.push_back(new Instruction("SUB",old_b));
+	instructions.push_back(new Instruction("JNEG",instructions.size() + 22));
+	
+	//pętla w pętli 2
+	instructions.push_back(new Instruction("LOAD",a));
+	instructions.push_back(new Instruction("SUB",b));
+	instructions.push_back(new Instruction("INC"));
+	instructions.push_back(new Instruction("JPOS",instructions.size() + 8));
+	
+	instructions.push_back(new Instruction("LOAD",b));
+	instructions.push_back(new Instruction("SHIFT",minus_one));
+	instructions.push_back(new Instruction("STORE",b));
+	instructions.push_back(new Instruction("LOAD",temp));
+	instructions.push_back(new Instruction("SHIFT",minus_one));
+	instructions.push_back(new Instruction("STORE",temp));
+	instructions.push_back(new Instruction("JUMP",instructions.size() - 10));
+	
+	//dodanie wyniku
+	instructions.push_back(new Instruction("LOAD",result));
+	instructions.push_back(new Instruction("ADD",temp));
+	instructions.push_back(new Instruction("STORE",result));
+	instructions.push_back(new Instruction("LOAD",a));
+	instructions.push_back(new Instruction("SUB",b));
+	instructions.push_back(new Instruction("STORE",a));
+	instructions.push_back(new Instruction("JUMP",instructions.size() - 20));
+	
+	//dzielenie przez zero
+	instructions.push_back(new Instruction("SUB",0));
+	instructions.push_back(new Instruction("STORE",a));
+	instructions.push_back(new Instruction("JUMP",instructions.size() + 42 + 1));
+	
+	//ustalenie znaku wyniku i reszty
+	instructions.push_back(new Instruction("LOAD",a_sign));
+	instructions.push_back(new Instruction("JPOS",instructions.size() + 24 + 1));
+	instructions.push_back(new Instruction("LOAD",b_sign));
+	instructions.push_back(new Instruction("JPOS",instructions.size() + 7 + 1));
+	instructions.push_back(new Instruction("LOAD",a));
+	instructions.push_back(new Instruction("SHIFT",one));
+	instructions.push_back(new Instruction("STORE",pom));
+	instructions.push_back(new Instruction("LOAD",a));
+	instructions.push_back(new Instruction("SUB",pom));
+	instructions.push_back(new Instruction("STORE",a));
+	instructions.push_back(new Instruction("JUMP",instructions.size() + 32));
+	
+	//mały else
+	instructions.push_back(new Instruction("LOAD",a));
+	instructions.push_back(new Instruction("JZERO",instructions.size() + 7));
+	instructions.push_back(new Instruction("LOAD",result));
+	instructions.push_back(new Instruction("INC"));
+	instructions.push_back(new Instruction("STORE",result));
+	instructions.push_back(new Instruction("LOAD",old_b));
+	instructions.push_back(new Instruction("SUB",a));
+	instructions.push_back(new Instruction("STORE",a));
+	
+	// po ifie w małym elsie
+	instructions.push_back(new Instruction("LOAD",result));
+	instructions.push_back(new Instruction("SHIFT",one));
+	instructions.push_back(new Instruction("STORE",pom));
+	instructions.push_back(new Instruction("LOAD",result));
+	instructions.push_back(new Instruction("SUB",pom));
+	instructions.push_back(new Instruction("STORE",result));
+	instructions.push_back(new Instruction("JUMP",instructions.size() + 17));
+	
+	//duży else
+	instructions.push_back(new Instruction("LOAD",b_sign));
+	instructions.push_back(new Instruction("JPOS",instructions.size() + 15));
+	instructions.push_back(new Instruction("LOAD",a));
+	instructions.push_back(new Instruction("JZERO",instructions.size() + 7));
+	instructions.push_back(new Instruction("LOAD",result));
+	instructions.push_back(new Instruction("INC"));
+	instructions.push_back(new Instruction("STORE",result));
+	instructions.push_back(new Instruction("LOAD",a));
+	instructions.push_back(new Instruction("SUB",old_b));
+	instructions.push_back(new Instruction("STORE",a));
+	
+	//po drugim ifie w elsie
+	instructions.push_back(new Instruction("LOAD",result));
+	instructions.push_back(new Instruction("SHIFT",one));
+	instructions.push_back(new Instruction("STORE",pom));
+	instructions.push_back(new Instruction("LOAD",result));
+	instructions.push_back(new Instruction("SUB",pom));
+	instructions.push_back(new Instruction("STORE",result));
+	
+	//wyświetlenie wyniku (tu zamiast wyświetlenia umieszczenie wyniku w odpowiedniej komórce)
+	if(!mod) {
+		instructions.push_back(new Instruction("LOAD",result));
+	} else {
+		instructions.push_back(new Instruction("LOAD",a));
+	}
+	instructions.push_back(new Instruction("STORE",result_cell));
+	
+	
+	// na końcu odpowiednio zmniejszyć wartość memory_pointer
+	memory_pointer = memory_pointer - 10;
 }
 
 void subtract(struct value* value1, struct value* value2, long long result_cell) {

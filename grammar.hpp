@@ -91,7 +91,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 85 "grammar.ypp" /* yacc.c:1909  */
+#line 88 "grammar.ypp" /* yacc.c:1909  */
 
 	char* string;
 	int integer;

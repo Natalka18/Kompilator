@@ -1,3 +1,5 @@
+# jednak zepsute
+
 # dzielenie dodatnich liczb a/b
 # w komórce 9 jest wynik dzielenia, a w komórce 10 reszta z dzielenia
 # przy dzieleniu przez 0 w komórce 9 jest wartość 0, a w komórce 10 jest wartość a
@@ -14,7 +16,7 @@ GET
 STORE 10
 GET
 STORE 11
-JZERO 56 # dzielenie przez zero
+JZERO 57 # dzielenie przez zero
 STORE 12 # w 12 zapisuję kopię liczby b
 
 
@@ -42,16 +44,19 @@ JUMP 20 # pętla 1
 
 # pętla 2 (30)
 
-LOAD 11
+#LOAD 11
+LOAD 10
 SUB 12
-JZERO 51 # wyświetlenie wyniku
+INC
+#JZERO 51 # wyświetlenie wyniku
+JPOS 52 # wyświetlenie wyniku
 
-# pętla w pętli 2 (33)
+# pętla w pętli 2 (34)
 
 LOAD 10
 SUB 11
 INC
-JPOS 44 # dodanie wyniku
+JPOS 45 # dodanie wyniku
 
 LOAD 11
 SHIFT 2
@@ -59,10 +64,10 @@ STORE 11
 LOAD 8
 SHIFT 2
 STORE 8
-JUMP 33 # pętla w pętli 2
+JUMP 34 # pętla w pętli 2
 
 
-# dodanie wyniku (44)
+# dodanie wyniku (45)
 
 LOAD 9
 ADD 8
@@ -72,7 +77,7 @@ SUB 11
 STORE 10
 JUMP 30 # pętla 2
 
-# wyświetlenie wyniku (51)
+# wyświetlenie wyniku (52)
 
 LOAD 9
 PUT
@@ -81,7 +86,7 @@ PUT
 HALT
 
 
-# dzielenie przez zero (56)
+# dzielenie przez zero (57)
 
 LOAD 9
 PUT
