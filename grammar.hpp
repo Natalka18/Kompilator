@@ -91,15 +91,16 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 88 "grammar.ypp" /* yacc.c:1909  */
+#line 106 "grammar.ypp" /* yacc.c:1909  */
 
 	char* string;
 	int integer;
 	long long long_long;
 	struct value* value_struct;
 	struct result* result_struct;
+	struct cond* cond_struct;
 
-#line 103 "grammar.hpp" /* yacc.c:1909  */
+#line 104 "grammar.hpp" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

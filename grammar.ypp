@@ -4,6 +4,7 @@
 	#include<string>
 	#include<vector>
 	#include<map>
+	#include<stack>
 	
 	#include"Instruction.hpp"
 	//#include"Value.hpp"
@@ -37,6 +38,17 @@
 							// numer komórki, w której znajduje się dana wartość
 		bool valueIsNumber; // true, jeśli value było num
 	};
+	
+	// odpowiada warunkowi condition
+	struct cond {
+		struct value* value1;
+		struct value* value2;
+		string op; // rodzaj porównania (EQ, NEQ, LE itd.)
+	};
+	
+	// stos służący do przechowywania numerów instrukcji w celu ominięcia poleceń
+	// znajdujących się wewnątrz ifa (lub else'a)
+	stack<long long> ifLinePointerStack;
 	
 	void yyset_out(FILE* out_str);
 	FILE* yyget_out();
@@ -83,7 +95,13 @@
 	// dzieli liczby z value1 i value2 i umieszcza wynik w komórce o numerze result_cell.
 	// Jeśli mod jest true, to zamiast wyniku dzielenia umieszcza resztę w result_cell
 	void divide(struct value* value1, struct value* value2, long long result_cell, bool mod);
+	// umieszcza w akumulatorze wartość do sprawdzenia (value1-value2), następnie wykonuje 
+	// skok do instrukcji o numerze k
+	void checkCondition(struct cond* c, long long k);
 %}
+
+%define parse.error verbose
+%define parse.lac full
 
 %union {
 	char* string;
@@ -91,11 +109,13 @@
 	long long long_long;
 	struct value* value_struct;
 	struct result* result_struct;
+	struct cond* cond_struct;
 };
 
 %type<value_struct> identifier
 %type<value_struct> value;
 %type<long_long> expression; // expression ma wartość numeru komórki, w której znajduje się wynik
+%type<cond_struct> condition;
 
 %token DECLARE
 %token BEGIN_TOKEN
@@ -166,7 +186,10 @@ declarations  : declarations comma pidentifier {
               }
               ;
 
-commands      : commands command
+commands      : commands command {
+					//cout<<"commands"<<endl;
+					//cout<<instructions.size()<<endl;
+				}
               | command
               ;
 
@@ -174,8 +197,25 @@ command       : identifier ASSIGN expression semicolon {
 					storeValueFromCell($1, $3);
 					memory_pointer--; // patrz expression: value
 				}
-              | IF condition THEN commands ELSE commands ENDIF
-              | IF condition THEN commands ENDIF
+              | IF condition {
+              		checkCondition($2,0); // narazie nie da się ustalić, dokąd ma być skok
+              		ifLinePointerStack.push(instructions.size()-1);
+              } THEN commands {
+              		long long jumpIndex = ifLinePointerStack.top();
+              		ifLinePointerStack.pop();
+              		Instruction* instruction = instructions[jumpIndex];
+              		
+              		// skok, który skacze instrukcję dalej (k:=k+1)
+              		// jeśli później wystąpi else, to zmienimy argument tak,
+              		// żeby skakać za else'a
+              		instructions.push_back(new Instruction("JUMP",instructions.size() + 1));
+              		
+              		// dajemy na stos indeks powyższego jumpa
+              		ifLinePointerStack.push(instructions.size()-1);
+              		
+              		instruction->arg = instructions.size();
+              		
+              } end_if
               | WHILE condition DO commands ENDWHILE
               | DO commands WHILE condition ENDDO
               | FOR pidentifier FROM value TO value DO commands ENDFOR
@@ -187,6 +227,22 @@ command       : identifier ASSIGN expression semicolon {
               	printValue($2);
               }
               ;
+              
+end_if        : ELSE {
+              		
+				} commands ENDIF {
+					// ściągamy ze stosu indeks jumpa, którego argument chcemy zmienić
+					// (ma skakać za else'a)
+					long long jumpIndex = ifLinePointerStack.top();
+              		ifLinePointerStack.pop();
+              		Instruction* instruction = instructions[jumpIndex];
+              		instruction->arg = instructions.size();
+				}
+			  | ENDIF {
+			  		// nie było else'a po ifie. Ściągamy niepotrzebną daną ze stosu
+			  		ifLinePointerStack.pop();
+			  }
+			  ;
 
 expression    : value {
 					loadValueToAccumulator($1);
@@ -228,12 +284,54 @@ expression    : value {
               }
               ;
 
-condition     : value EQ value
-              | value NEQ value
-              | value LE value
-              | value GE value
-              | value LEQ value
-              | value GEQ value
+condition     : value EQ value {
+					cond* c = new cond;
+					c->op = "EQ";
+					c->value1 = $1;
+					c->value2 = $3;
+					
+					$$ = c;
+				}
+              | value NEQ value {
+              		cond* c = new cond;
+					c->op = "NEQ";
+					c->value1 = $1;
+					c->value2 = $3;
+					
+					$$ = c;
+              }
+              | value LE value {
+              		cond* c = new cond;
+					c->op = "LE";
+					c->value1 = $1;
+					c->value2 = $3;
+					
+					$$ = c;
+              }
+              | value GE value {
+              		cond* c = new cond;
+					c->op = "GE";
+					c->value1 = $1;
+					c->value2 = $3;
+					
+					$$ = c;
+              }
+              | value LEQ value {
+              		cond* c = new cond;
+					c->op = "LEQ";
+					c->value1 = $1;
+					c->value2 = $3;
+					
+					$$ = c;
+              }
+              | value GEQ value {
+              		cond* c = new cond;
+					c->op = "GEQ";
+					c->value1 = $1;
+					c->value2 = $3;
+					
+					$$ = c;
+              }
               ;
 
 value         : num {
@@ -972,6 +1070,34 @@ void subtract(struct value* value1, struct value* value2, long long result_cell)
 		
 		instructions.push_back(new Instruction("SUB",memory_pointer));
 		instructions.push_back(new Instruction("STORE",result_cell));
+	}
+}
+
+void checkCondition(struct cond* c, long long k) {
+	struct value* value1 = c->value1;
+	struct value* value2 = c->value2;
+	string op = c->op;
+	
+	subtract(value1,value2,0);
+	
+	if(op == "GE") {
+		instructions.push_back(new Instruction("DEC"));
+		instructions.push_back(new Instruction("JNEG",0));
+	} else if(op == "EQ") {
+		instructions.push_back(new Instruction("JPOS",instructions.size() + 4));
+		instructions.push_back(new Instruction("STORE",memory_pointer));
+		instructions.push_back(new Instruction("SUB",0));
+		instructions.push_back(new Instruction("SUB",memory_pointer));
+		instructions.push_back(new Instruction("JPOS",0));
+	} else if(op == "NEQ") {
+		instructions.push_back(new Instruction("JZERO",0));
+	} else if(op == "LE") {
+		instructions.push_back(new Instruction("INC"));
+		instructions.push_back(new Instruction("JPOS",0));
+	} else if(op == "LEQ") {
+		instructions.push_back(new Instruction("JPOS",0));
+	} else if(op == "GEQ") {
+		instructions.push_back(new Instruction("JNEG",0));
 	}
 }
 
