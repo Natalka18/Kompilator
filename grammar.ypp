@@ -63,6 +63,15 @@
 	// w pętli DO WHILE
 	stack<long long> doWhileLinePointerStack;
 	
+	// tak jak dla while
+	stack<long long> forLinePointerStack;
+	// tu są umieszczane numery komórki, w której umieszczamy wartość iteratora
+	stack<long long> forIteratorCellStack;
+	// tu są umieszczane numery komórki, w której umieszczamy licznik pętli
+	stack<long long> forCounterCellStack;
+	// nazwy iteratorów
+	stack<string> iteratorNameStack;
+	
 	void yyset_out(FILE* out_str);
 	FILE* yyget_out();
 	
@@ -212,7 +221,7 @@ command       : identifier ASSIGN expression semicolon {
 					memory_pointer--; // patrz expression: value
 				}
               | IF condition {
-              		checkConditionNegation($2,0); // narazie nie da się ustalić, dokąd ma być skok
+              		checkConditionNegation($2,0); //narazie nie da się ustalić, dokąd ma być skok
               		ifLinePointerStack.push(instructions.size()-1);
               } THEN commands {
               		long long jumpIndex = ifLinePointerStack.top();
@@ -234,7 +243,7 @@ command       : identifier ASSIGN expression semicolon {
               		// póżniej będziemy skakać do początku sprawdzania warunku
               		whileConditionPointerStack.push(instructions.size());
               		
-              		checkConditionNegation($2,0); // narazie nie da się ustalić, dokąd ma być skok
+              		checkConditionNegation($2,0); //narazie nie da się ustalić, dokąd ma być skok
               		
               		// na drugim stosie umieszczamy, w której linii znajduje się skok
               		// (JNEG, JZERO, JPOS), w którym trzeba ustalić miejsce skoku
@@ -265,8 +274,134 @@ command       : identifier ASSIGN expression semicolon {
               		
               		instructions[jumpIndex]->arg = loopBegin;
               }
-              | FOR pidentifier FROM value TO value DO commands ENDFOR
-              | FOR pidentifier FROM value DOWNTO value DO commands ENDFOR
+              | FOR pidentifier FROM value TO value {
+              		// zadeklarujemy chwilowo iterator jako zmienną
+              		// na końcu pętli jest usuwana
+              		declareVariable($2); // memory_pointer przesunął się tu o jeden
+              		long long iteratorCell = memory_pointer - 1; // miejsce iteratora w pamięci
+              		forIteratorCellStack.push(iteratorCell);
+              		iteratorNameStack.push($2);
+              		
+              		// umieszczamy początkową wartość iteratora w akumulatorze
+              		loadValueToAccumulator($4);
+              		// i przypisujemy tę wartość iteratorowi
+              		// tzn. umieszczamy wartość akumulatora w komórce, która odpowiada
+              		// iteratorowi
+              		instructions.push_back(new Instruction("STORE",iteratorCell));
+              		
+              		// rezerujemy komórkę, która będzie służyć do odliczania iteracji
+              		// i umieszczamy w niej różnicę wartości końcowej i początkowej
+              		// iteratora
+              		subtract($6,$4,memory_pointer);
+              		long long iterationsCounterCell = memory_pointer;
+              		memory_pointer++;
+              		forCounterCellStack.push(iterationsCounterCell);
+              		
+              		instructions.push_back(new Instruction("LOAD",iterationsCounterCell));
+              		// jeśli ta różnica jest ujemna, to wychodzimy z pętli
+              		// narazie nie da się ustalić, w które miejsce skoczyć,
+              		// żeby wyjść z pętli. Więc wrzucamy na stos, w której linii
+              		// znajduje się JNEG
+              		forLinePointerStack.push(instructions.size());
+              		instructions.push_back(new Instruction("JNEG",0));
+              		
+              } DO commands ENDFOR {
+              		// tu są wklejone instrukcje z commands.
+              		// teraz trzeba zmienić wartość iteratora
+              		// i zmniejszyć licznik iteracji
+              		long long iteratorCell = forIteratorCellStack.top();
+              		forIteratorCellStack.pop();
+              		long long iterationsCounterCell = forCounterCellStack.top();
+              		forCounterCellStack.pop();
+              		
+              		instructions.push_back(new Instruction("LOAD",iteratorCell));
+              		instructions.push_back(new Instruction("INC"));
+              		instructions.push_back(new Instruction("STORE",iteratorCell));
+              		
+              		instructions.push_back(new Instruction("LOAD",iterationsCounterCell));
+              		instructions.push_back(new Instruction("DEC"));
+              		instructions.push_back(new Instruction("STORE",iterationsCounterCell));
+              		
+              		// skok do sprawdzenia warunku pętli (do JNEG)
+              		long long jnegPointer = forLinePointerStack.top();
+              		forLinePointerStack.pop();
+              		instructions.push_back(new Instruction("JUMP",jnegPointer));
+              		
+              		// skok JNEG musi być za powyższą instrukcję
+              		instructions[jnegPointer]->arg = instructions.size();
+              
+              		// na koniec pętli dodatkowe komórki nie są potrzebne
+              		memory_pointer = memory_pointer - 2;
+              		
+              		// usuwamy też iterator (powinien być zadeklarowany tylko w pętli)
+              		string iteratorName = iteratorNameStack.top();
+              		iteratorNameStack.pop();
+              		variables.erase(iteratorName);
+              }
+              | FOR pidentifier FROM value DOWNTO value {
+              		// zadeklarujemy chwilowo iterator jako zmienną
+              		// na końcu pętli jest usuwana
+              		declareVariable($2); // memory_pointer przesunął się tu o jeden
+              		long long iteratorCell = memory_pointer - 1; // miejsce iteratora w pamięci
+              		forIteratorCellStack.push(iteratorCell);
+              		iteratorNameStack.push($2);
+              		
+              		// umieszczamy początkową wartość iteratora w akumulatorze
+              		loadValueToAccumulator($4);
+              		// i przypisujemy tę wartość iteratorowi
+              		// tzn. umieszczamy wartość akumulatora w komórce, która odpowiada
+              		// iteratorowi
+              		instructions.push_back(new Instruction("STORE",iteratorCell));
+              		
+              		// rezerujemy komórkę, która będzie służyć do odliczania iteracji
+              		// i umieszczamy w niej różnicę wartości końcowej i początkowej
+              		// iteratora
+              		subtract($6,$4,memory_pointer);
+              		long long iterationsCounterCell = memory_pointer;
+              		memory_pointer++;
+              		forCounterCellStack.push(iterationsCounterCell);
+              		
+              		instructions.push_back(new Instruction("LOAD",iterationsCounterCell));
+              		// jeśli ta różnica jest dodatnie, to wychodzimy z pętli
+              		// narazie nie da się ustalić, w które miejsce skoczyć,
+              		// żeby wyjść z pętli. Więc wrzucamy na stos, w której linii
+              		// znajduje się JNEG
+              		forLinePointerStack.push(instructions.size());
+              		instructions.push_back(new Instruction("JPOS",0));
+              		
+              } DO commands ENDFOR {
+              		// tu są wklejone instrukcje z commands.
+              		// teraz trzeba zmienić wartość iteratora
+              		// i zmniejszyć licznik iteracji
+              		long long iteratorCell = forIteratorCellStack.top();
+              		forIteratorCellStack.pop();
+              		long long iterationsCounterCell = forCounterCellStack.top();
+              		forCounterCellStack.pop();
+              		
+              		instructions.push_back(new Instruction("LOAD",iteratorCell));
+              		instructions.push_back(new Instruction("DEC"));
+              		instructions.push_back(new Instruction("STORE",iteratorCell));
+              		
+              		instructions.push_back(new Instruction("LOAD",iterationsCounterCell));
+              		instructions.push_back(new Instruction("INC"));
+              		instructions.push_back(new Instruction("STORE",iterationsCounterCell));
+              		
+              		// skok do sprawdzenia warunku pętli (do JPOS)
+              		long long jposPointer = forLinePointerStack.top();
+              		forLinePointerStack.pop();
+              		instructions.push_back(new Instruction("JUMP",jposPointer));
+              		
+              		// skok JNEG musi być za powyższą instrukcję
+              		instructions[jposPointer]->arg = instructions.size();
+              
+              		// na koniec pętli dodatkowe komórki nie są potrzebne
+              		memory_pointer = memory_pointer - 2;
+              		
+              		// usuwamy też iterator (powinien być zadeklarowany tylko w pętli)
+              		string iteratorName = iteratorNameStack.top();
+              		iteratorNameStack.pop();
+              		variables.erase(iteratorName);
+              }
               | READ identifier semicolon {
               	loadValueToVariable($2);
               }
@@ -290,6 +425,8 @@ end_if        : ELSE {
 			  		ifLinePointerStack.pop();
 			  }
 			  ;
+			  
+
 
 expression    : value {
 					loadValueToAccumulator($1);
