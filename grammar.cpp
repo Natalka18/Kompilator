@@ -577,7 +577,7 @@ static const yytype_uint16 yyrline[] =
      220,   224,   227,   224,   243,   243,   267,   267,   278,   278,
      342,   342,   406,   409,   414,   414,   424,   432,   445,   450,
      455,   460,   465,   472,   480,   488,   496,   504,   512,   522,
-     535,   540,   561,   590
+     535,   540,   561,   591
 };
 #endif
 
@@ -2262,17 +2262,18 @@ yyreduce:
 						newValue->isArray = true;
 						newValue->isVariable = false;
 						newValue->isNumber = false;
+						newValue->isIterator = variables[(yyvsp[-3].string)]->isIterator;
 						newValue->index = (yyvsp[-1].string);
 						newValue->index_long = -1;
 						newValue->name = (yyvsp[-3].string);
 						(yyval.value_struct) = newValue;
 					}
 				}
-#line 2272 "grammar.cpp" /* yacc.c:1646  */
+#line 2273 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 43:
-#line 590 "grammar.ypp" /* yacc.c:1646  */
+#line 591 "grammar.ypp" /* yacc.c:1646  */
     {
               
               	if(variables.find((yyvsp[-3].string)) == variables.end()) { // jeśli tablica nie jest zadeklarowana
@@ -2286,17 +2287,18 @@ yyreduce:
 						newValue->isArray = true;
 						newValue->isVariable = false;
 						newValue->isNumber = false;
+						newValue->isIterator = variables[(yyvsp[-3].string)]->isIterator;
 						newValue->index = "";
 						newValue->index_long = (yyvsp[-1].long_long);
 						newValue->name = (yyvsp[-3].string);
 						(yyval.value_struct) = newValue;
 				}
               }
-#line 2296 "grammar.cpp" /* yacc.c:1646  */
+#line 2298 "grammar.cpp" /* yacc.c:1646  */
     break;
 
 
-#line 2300 "grammar.cpp" /* yacc.c:1646  */
+#line 2302 "grammar.cpp" /* yacc.c:1646  */
         default: break;
       }
     if (yychar_backup != yychar)
@@ -2536,7 +2538,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 611 "grammar.ypp" /* yacc.c:1906  */
+#line 613 "grammar.ypp" /* yacc.c:1906  */
 
 
 int yyerror(string s) {
