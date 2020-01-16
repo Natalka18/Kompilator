@@ -21,6 +21,7 @@
 		bool isArray; // czy nieterminal odpowiada elementowi tablicy
 		bool isVariable; // czy nieterminal odpowiada zwykłej zmiennej
 		bool isNumber; // czy nieterminal odpowiada zwykłej liczbie
+		bool isIterator; // czy nieterminal odnosi się do iteratora
 		string name; // nazwa zmiennej (lub tablicy)
 		string index; // nazwa zmiennej, która jest indeksem elementu tablicy.
 					  // Jeśli to nie jest tablica, to index=""
@@ -81,7 +82,7 @@
 	
 	void printInstructions();
 	// funkcja dodaje do wektora variables nową zmienną. Zwraca true, jeśli operacja się powiedzie
-	bool declareVariable(string name);
+	bool declareVariable(string name, bool isIterator);
 	// funkcja wczytuje wartość oraz zapisuje ją w zmiennej o nazwie name.
 	// Zwraca true, jeśli operacja się powiedzie. Dodaje odpowiednie instrukcje assemblera
 	bool loadValueToVariable(struct value* value);
@@ -196,13 +197,13 @@ program       : DECLARE declarations BEGIN_TOKEN commands END {
 ;
 
 declarations  : declarations comma pidentifier {
-					declareVariable($3);
+					declareVariable($3, false);
 				}
               | declarations comma pidentifier left_bracket num colon num right_bracket {
               	declareArray($3, $5, $7);
               }
               | pidentifier {
-              	declareVariable($1);
+              	declareVariable($1, false);
               }
               | pidentifier left_bracket num colon num right_bracket {
               	declareArray($1, $3, $5);
@@ -277,7 +278,7 @@ command       : identifier ASSIGN expression semicolon {
               | FOR pidentifier FROM value TO value {
               		// zadeklarujemy chwilowo iterator jako zmienną
               		// na końcu pętli jest usuwana
-              		declareVariable($2); // memory_pointer przesunął się tu o jeden
+              		declareVariable($2, true); // memory_pointer przesunął się tu o jeden
               		long long iteratorCell = memory_pointer - 1; // miejsce iteratora w pamięci
               		forIteratorCellStack.push(iteratorCell);
               		iteratorNameStack.push($2);
@@ -341,7 +342,7 @@ command       : identifier ASSIGN expression semicolon {
               | FOR pidentifier FROM value DOWNTO value {
               		// zadeklarujemy chwilowo iterator jako zmienną
               		// na końcu pętli jest usuwana
-              		declareVariable($2); // memory_pointer przesunął się tu o jeden
+              		declareVariable($2, true); // memory_pointer przesunął się tu o jeden
               		long long iteratorCell = memory_pointer - 1; // miejsce iteratora w pamięci
               		forIteratorCellStack.push(iteratorCell);
               		iteratorNameStack.push($2);
@@ -524,6 +525,7 @@ value         : num {
 				newValue->isArray = false;
 				newValue->isVariable = false;
 				newValue->isNumber = true;
+				newValue->isIterator = false;
 				newValue->index = "";
 				newValue->index_long = -1;
 				newValue->name = "";
@@ -549,6 +551,7 @@ identifier    : pidentifier {
 						newValue->isArray = false;
 						newValue->isVariable = true;
 						newValue->isNumber = false;
+						newValue->isIterator = variables[$1]->isIterator;
 						newValue->index = "";
 						newValue->index_long = -1;
 						newValue->name = $1;
@@ -618,10 +621,11 @@ void printInstructions() {
 	}
 }
 
-bool declareVariable(string name) {
+bool declareVariable(string name, bool isIterator) {
 	// jeśli zmienna o nazwie name nie jest jeszcze zadeklarowana
 	if(variables.find(name) == variables.end()) {
 		MemoryItem* memory_item = new MemoryItem(memory_pointer, name);
+		memory_item->isIterator = isIterator;
 		variables[name] = memory_item;
 		
 		memory_pointer++;
@@ -682,6 +686,7 @@ bool loadValueToVariable(struct value* value) {
 }
 
 void storeValueFromCell(struct value* value, long long cell) {
+	if(!value->isIterator) {
 	if(value->isVariable) {
 			// wczytanie wartość do akumulatora
 			instructions.push_back(new Instruction("LOAD",cell));
@@ -723,6 +728,10 @@ void storeValueFromCell(struct value* value, long long cell) {
 						
 					}
 			} 
+		}
+		} else {
+			// jeśli value odnosi się do jakiegoś iteratora pętli, to błąd
+			yyerror("Iterator cannot be modified.");
 		}
 }
 

@@ -86,6 +86,7 @@
 		bool isArray; // czy nieterminal odpowiada elementowi tablicy
 		bool isVariable; // czy nieterminal odpowiada zwykłej zmiennej
 		bool isNumber; // czy nieterminal odpowiada zwykłej liczbie
+		bool isIterator; // czy nieterminal odnosi się do iteratora
 		string name; // nazwa zmiennej (lub tablicy)
 		string index; // nazwa zmiennej, która jest indeksem elementu tablicy.
 					  // Jeśli to nie jest tablica, to index=""
@@ -146,7 +147,7 @@
 	
 	void printInstructions();
 	// funkcja dodaje do wektora variables nową zmienną. Zwraca true, jeśli operacja się powiedzie
-	bool declareVariable(string name);
+	bool declareVariable(string name, bool isIterator);
 	// funkcja wczytuje wartość oraz zapisuje ją w zmiennej o nazwie name.
 	// Zwraca true, jeśli operacja się powiedzie. Dodaje odpowiednie instrukcje assemblera
 	bool loadValueToVariable(struct value* value);
@@ -187,7 +188,7 @@
 	void checkConditionNegation(struct cond* c, long long k); // if, while
 	void checkCondition(struct cond* c, long long k); // do while
 
-#line 191 "grammar.cpp" /* yacc.c:339  */
+#line 192 "grammar.cpp" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -268,7 +269,7 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 129 "grammar.ypp" /* yacc.c:355  */
+#line 130 "grammar.ypp" /* yacc.c:355  */
 
 	char* string;
 	int integer;
@@ -277,7 +278,7 @@ union YYSTYPE
 	struct result* result_struct;
 	struct cond* cond_struct;
 
-#line 281 "grammar.cpp" /* yacc.c:355  */
+#line 282 "grammar.cpp" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -294,7 +295,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 298 "grammar.cpp" /* yacc.c:358  */
+#line 299 "grammar.cpp" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -572,11 +573,11 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   188,   188,   192,   198,   201,   204,   207,   212,   216,
-     219,   223,   226,   223,   242,   242,   266,   266,   277,   277,
-     341,   341,   405,   408,   413,   413,   423,   431,   444,   449,
-     454,   459,   464,   471,   479,   487,   495,   503,   511,   521,
-     533,   538,   558,   587
+       0,   189,   189,   193,   199,   202,   205,   208,   213,   217,
+     220,   224,   227,   224,   243,   243,   267,   267,   278,   278,
+     342,   342,   406,   409,   414,   414,   424,   432,   445,   450,
+     455,   460,   465,   472,   480,   488,   496,   504,   512,   522,
+     535,   540,   561,   590
 };
 #endif
 
@@ -1690,84 +1691,84 @@ yyreduce:
     switch (yyn)
       {
           case 2:
-#line 188 "grammar.ypp" /* yacc.c:1646  */
+#line 189 "grammar.ypp" /* yacc.c:1646  */
     {
 	instructions.push_back(new Instruction("HALT"));
 	printInstructions();
 }
-#line 1699 "grammar.cpp" /* yacc.c:1646  */
+#line 1700 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 3:
-#line 192 "grammar.ypp" /* yacc.c:1646  */
+#line 193 "grammar.ypp" /* yacc.c:1646  */
     {
 	instructions.push_back(new Instruction("HALT"));
 	printInstructions();
 }
-#line 1708 "grammar.cpp" /* yacc.c:1646  */
+#line 1709 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 4:
-#line 198 "grammar.ypp" /* yacc.c:1646  */
+#line 199 "grammar.ypp" /* yacc.c:1646  */
     {
-					declareVariable((yyvsp[0].string));
+					declareVariable((yyvsp[0].string), false);
 				}
-#line 1716 "grammar.cpp" /* yacc.c:1646  */
+#line 1717 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 5:
-#line 201 "grammar.ypp" /* yacc.c:1646  */
+#line 202 "grammar.ypp" /* yacc.c:1646  */
     {
               	declareArray((yyvsp[-5].string), (yyvsp[-3].long_long), (yyvsp[-1].long_long));
               }
-#line 1724 "grammar.cpp" /* yacc.c:1646  */
+#line 1725 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 6:
-#line 204 "grammar.ypp" /* yacc.c:1646  */
+#line 205 "grammar.ypp" /* yacc.c:1646  */
     {
-              	declareVariable((yyvsp[0].string));
+              	declareVariable((yyvsp[0].string), false);
               }
-#line 1732 "grammar.cpp" /* yacc.c:1646  */
+#line 1733 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 207 "grammar.ypp" /* yacc.c:1646  */
+#line 208 "grammar.ypp" /* yacc.c:1646  */
     {
               	declareArray((yyvsp[-5].string), (yyvsp[-3].long_long), (yyvsp[-1].long_long));
               }
-#line 1740 "grammar.cpp" /* yacc.c:1646  */
+#line 1741 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 212 "grammar.ypp" /* yacc.c:1646  */
+#line 213 "grammar.ypp" /* yacc.c:1646  */
     {
 					//cout<<"commands"<<endl;
 					//cout<<instructions.size()<<endl;
 				}
-#line 1749 "grammar.cpp" /* yacc.c:1646  */
+#line 1750 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 219 "grammar.ypp" /* yacc.c:1646  */
+#line 220 "grammar.ypp" /* yacc.c:1646  */
     {
 					storeValueFromCell((yyvsp[-3].value_struct), (yyvsp[-1].long_long));
 					memory_pointer--; // patrz expression: value
 				}
-#line 1758 "grammar.cpp" /* yacc.c:1646  */
+#line 1759 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 11:
-#line 223 "grammar.ypp" /* yacc.c:1646  */
+#line 224 "grammar.ypp" /* yacc.c:1646  */
     {
               		checkConditionNegation((yyvsp[0].cond_struct),0); //narazie nie da się ustalić, dokąd ma być skok
               		ifLinePointerStack.push(instructions.size()-1);
               }
-#line 1767 "grammar.cpp" /* yacc.c:1646  */
+#line 1768 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 226 "grammar.ypp" /* yacc.c:1646  */
+#line 227 "grammar.ypp" /* yacc.c:1646  */
     {
               		long long jumpIndex = ifLinePointerStack.top();
               		ifLinePointerStack.pop();
@@ -1784,11 +1785,11 @@ yyreduce:
               		instruction->arg = instructions.size();
               		
               }
-#line 1788 "grammar.cpp" /* yacc.c:1646  */
+#line 1789 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 242 "grammar.ypp" /* yacc.c:1646  */
+#line 243 "grammar.ypp" /* yacc.c:1646  */
     {
               		// póżniej będziemy skakać do początku sprawdzania warunku
               		whileConditionPointerStack.push(instructions.size());
@@ -1800,11 +1801,11 @@ yyreduce:
               		whileLinePointerStack.push(instructions.size() - 1);
               		
               }
-#line 1804 "grammar.cpp" /* yacc.c:1646  */
+#line 1805 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 252 "grammar.ypp" /* yacc.c:1646  */
+#line 253 "grammar.ypp" /* yacc.c:1646  */
     {
               		long long conditionPointer = whileConditionPointerStack.top();
               		whileConditionPointerStack.pop();
@@ -1819,20 +1820,20 @@ yyreduce:
               		// za powyższego jumpa
               		instructions[linePointer]->arg = instructions.size();
               }
-#line 1823 "grammar.cpp" /* yacc.c:1646  */
+#line 1824 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 266 "grammar.ypp" /* yacc.c:1646  */
+#line 267 "grammar.ypp" /* yacc.c:1646  */
     {
               		doWhileLinePointerStack.push(instructions.size());
               		
               }
-#line 1832 "grammar.cpp" /* yacc.c:1646  */
+#line 1833 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 269 "grammar.ypp" /* yacc.c:1646  */
+#line 270 "grammar.ypp" /* yacc.c:1646  */
     {
               		checkCondition((yyvsp[-1].cond_struct),0);
               		long long jumpIndex = instructions.size()-1;
@@ -1841,15 +1842,15 @@ yyreduce:
               		
               		instructions[jumpIndex]->arg = loopBegin;
               }
-#line 1845 "grammar.cpp" /* yacc.c:1646  */
+#line 1846 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 277 "grammar.ypp" /* yacc.c:1646  */
+#line 278 "grammar.ypp" /* yacc.c:1646  */
     {
               		// zadeklarujemy chwilowo iterator jako zmienną
               		// na końcu pętli jest usuwana
-              		declareVariable((yyvsp[-4].string)); // memory_pointer przesunął się tu o jeden
+              		declareVariable((yyvsp[-4].string), true); // memory_pointer przesunął się tu o jeden
               		long long iteratorCell = memory_pointer - 1; // miejsce iteratora w pamięci
               		forIteratorCellStack.push(iteratorCell);
               		iteratorNameStack.push((yyvsp[-4].string));
@@ -1878,11 +1879,11 @@ yyreduce:
               		instructions.push_back(new Instruction("JNEG",0));
               		
               }
-#line 1882 "grammar.cpp" /* yacc.c:1646  */
+#line 1883 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 308 "grammar.ypp" /* yacc.c:1646  */
+#line 309 "grammar.ypp" /* yacc.c:1646  */
     {
               		// tu są wklejone instrukcje z commands.
               		// teraz trzeba zmienić wartość iteratora
@@ -1916,15 +1917,15 @@ yyreduce:
               		iteratorNameStack.pop();
               		variables.erase(iteratorName);
               }
-#line 1920 "grammar.cpp" /* yacc.c:1646  */
+#line 1921 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 341 "grammar.ypp" /* yacc.c:1646  */
+#line 342 "grammar.ypp" /* yacc.c:1646  */
     {
               		// zadeklarujemy chwilowo iterator jako zmienną
               		// na końcu pętli jest usuwana
-              		declareVariable((yyvsp[-4].string)); // memory_pointer przesunął się tu o jeden
+              		declareVariable((yyvsp[-4].string), true); // memory_pointer przesunął się tu o jeden
               		long long iteratorCell = memory_pointer - 1; // miejsce iteratora w pamięci
               		forIteratorCellStack.push(iteratorCell);
               		iteratorNameStack.push((yyvsp[-4].string));
@@ -1953,11 +1954,11 @@ yyreduce:
               		instructions.push_back(new Instruction("JPOS",0));
               		
               }
-#line 1957 "grammar.cpp" /* yacc.c:1646  */
+#line 1958 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 372 "grammar.ypp" /* yacc.c:1646  */
+#line 373 "grammar.ypp" /* yacc.c:1646  */
     {
               		// tu są wklejone instrukcje z commands.
               		// teraz trzeba zmienić wartość iteratora
@@ -1991,35 +1992,35 @@ yyreduce:
               		iteratorNameStack.pop();
               		variables.erase(iteratorName);
               }
-#line 1995 "grammar.cpp" /* yacc.c:1646  */
+#line 1996 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 405 "grammar.ypp" /* yacc.c:1646  */
+#line 406 "grammar.ypp" /* yacc.c:1646  */
     {
               	loadValueToVariable((yyvsp[-1].value_struct));
               }
-#line 2003 "grammar.cpp" /* yacc.c:1646  */
+#line 2004 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 408 "grammar.ypp" /* yacc.c:1646  */
+#line 409 "grammar.ypp" /* yacc.c:1646  */
     {
               	printValue((yyvsp[-1].value_struct));
               }
-#line 2011 "grammar.cpp" /* yacc.c:1646  */
+#line 2012 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 413 "grammar.ypp" /* yacc.c:1646  */
+#line 414 "grammar.ypp" /* yacc.c:1646  */
     {
               		
 				}
-#line 2019 "grammar.cpp" /* yacc.c:1646  */
+#line 2020 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 415 "grammar.ypp" /* yacc.c:1646  */
+#line 416 "grammar.ypp" /* yacc.c:1646  */
     {
 					// ściągamy ze stosu indeks jumpa, którego argument chcemy zmienić
 					// (ma skakać za else'a)
@@ -2028,20 +2029,20 @@ yyreduce:
               		Instruction* instruction = instructions[jumpIndex];
               		instruction->arg = instructions.size();
 				}
-#line 2032 "grammar.cpp" /* yacc.c:1646  */
+#line 2033 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 423 "grammar.ypp" /* yacc.c:1646  */
+#line 424 "grammar.ypp" /* yacc.c:1646  */
     {
 			  		// nie było else'a po ifie. Ściągamy niepotrzebną daną ze stosu
 			  		ifLinePointerStack.pop();
 			  }
-#line 2041 "grammar.cpp" /* yacc.c:1646  */
+#line 2042 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 431 "grammar.ypp" /* yacc.c:1646  */
+#line 432 "grammar.ypp" /* yacc.c:1646  */
     {
 					loadValueToAccumulator((yyvsp[0].value_struct));
 					
@@ -2055,61 +2056,61 @@ yyreduce:
 									  // trzeba to zmienić
 									  // może można w assign zrobić memory_pointer-- ?
 				}
-#line 2059 "grammar.cpp" /* yacc.c:1646  */
+#line 2060 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 444 "grammar.ypp" /* yacc.c:1646  */
+#line 445 "grammar.ypp" /* yacc.c:1646  */
     {
               	add((yyvsp[-2].value_struct),(yyvsp[0].value_struct),memory_pointer);
               	(yyval.long_long)=memory_pointer;
               	memory_pointer++;
               }
-#line 2069 "grammar.cpp" /* yacc.c:1646  */
+#line 2070 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 449 "grammar.ypp" /* yacc.c:1646  */
+#line 450 "grammar.ypp" /* yacc.c:1646  */
     {
               	subtract((yyvsp[-2].value_struct),(yyvsp[0].value_struct),memory_pointer);
               	(yyval.long_long)=memory_pointer;
               	memory_pointer++;
               }
-#line 2079 "grammar.cpp" /* yacc.c:1646  */
+#line 2080 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 454 "grammar.ypp" /* yacc.c:1646  */
+#line 455 "grammar.ypp" /* yacc.c:1646  */
     {
               	multiply((yyvsp[-2].value_struct),(yyvsp[0].value_struct),memory_pointer);
               	(yyval.long_long)=memory_pointer;
               	memory_pointer++;
               }
-#line 2089 "grammar.cpp" /* yacc.c:1646  */
+#line 2090 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 459 "grammar.ypp" /* yacc.c:1646  */
+#line 460 "grammar.ypp" /* yacc.c:1646  */
     {
               	divide((yyvsp[-2].value_struct),(yyvsp[0].value_struct),memory_pointer,false);
               	(yyval.long_long)=memory_pointer;
               	memory_pointer++;
               }
-#line 2099 "grammar.cpp" /* yacc.c:1646  */
+#line 2100 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 464 "grammar.ypp" /* yacc.c:1646  */
+#line 465 "grammar.ypp" /* yacc.c:1646  */
     {
               	divide((yyvsp[-2].value_struct),(yyvsp[0].value_struct),memory_pointer,true);
               	(yyval.long_long)=memory_pointer;
               	memory_pointer++;
               }
-#line 2109 "grammar.cpp" /* yacc.c:1646  */
+#line 2110 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 471 "grammar.ypp" /* yacc.c:1646  */
+#line 472 "grammar.ypp" /* yacc.c:1646  */
     {
 					cond* c = new cond;
 					c->op = "EQ";
@@ -2118,11 +2119,11 @@ yyreduce:
 					
 					(yyval.cond_struct) = c;
 				}
-#line 2122 "grammar.cpp" /* yacc.c:1646  */
+#line 2123 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 479 "grammar.ypp" /* yacc.c:1646  */
+#line 480 "grammar.ypp" /* yacc.c:1646  */
     {
               		cond* c = new cond;
 					c->op = "NEQ";
@@ -2131,11 +2132,11 @@ yyreduce:
 					
 					(yyval.cond_struct) = c;
               }
-#line 2135 "grammar.cpp" /* yacc.c:1646  */
+#line 2136 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 487 "grammar.ypp" /* yacc.c:1646  */
+#line 488 "grammar.ypp" /* yacc.c:1646  */
     {
               		cond* c = new cond;
 					c->op = "LE";
@@ -2144,11 +2145,11 @@ yyreduce:
 					
 					(yyval.cond_struct) = c;
               }
-#line 2148 "grammar.cpp" /* yacc.c:1646  */
+#line 2149 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 495 "grammar.ypp" /* yacc.c:1646  */
+#line 496 "grammar.ypp" /* yacc.c:1646  */
     {
               		cond* c = new cond;
 					c->op = "GE";
@@ -2157,11 +2158,11 @@ yyreduce:
 					
 					(yyval.cond_struct) = c;
               }
-#line 2161 "grammar.cpp" /* yacc.c:1646  */
+#line 2162 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 37:
-#line 503 "grammar.ypp" /* yacc.c:1646  */
+#line 504 "grammar.ypp" /* yacc.c:1646  */
     {
               		cond* c = new cond;
 					c->op = "LEQ";
@@ -2170,11 +2171,11 @@ yyreduce:
 					
 					(yyval.cond_struct) = c;
               }
-#line 2174 "grammar.cpp" /* yacc.c:1646  */
+#line 2175 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 38:
-#line 511 "grammar.ypp" /* yacc.c:1646  */
+#line 512 "grammar.ypp" /* yacc.c:1646  */
     {
               		cond* c = new cond;
 					c->op = "GEQ";
@@ -2183,36 +2184,37 @@ yyreduce:
 					
 					(yyval.cond_struct) = c;
               }
-#line 2187 "grammar.cpp" /* yacc.c:1646  */
+#line 2188 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 39:
-#line 521 "grammar.ypp" /* yacc.c:1646  */
+#line 522 "grammar.ypp" /* yacc.c:1646  */
     {
               	// robimy value z num (num jest long longiem)
               	value* newValue = new value;
 				newValue->isArray = false;
 				newValue->isVariable = false;
 				newValue->isNumber = true;
+				newValue->isIterator = false;
 				newValue->index = "";
 				newValue->index_long = -1;
 				newValue->name = "";
 				newValue->num = (yyvsp[0].long_long);
 				(yyval.value_struct) = newValue;
               }
-#line 2204 "grammar.cpp" /* yacc.c:1646  */
+#line 2206 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 40:
-#line 533 "grammar.ypp" /* yacc.c:1646  */
+#line 535 "grammar.ypp" /* yacc.c:1646  */
     {
               	(yyval.value_struct) = (yyvsp[0].value_struct);
               }
-#line 2212 "grammar.cpp" /* yacc.c:1646  */
+#line 2214 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 41:
-#line 538 "grammar.ypp" /* yacc.c:1646  */
+#line 540 "grammar.ypp" /* yacc.c:1646  */
     {
 					// jeśli zmienna pidentifier nie jest zadeklarowana
 					if(variables.find((yyvsp[0].string)) == variables.end()) {
@@ -2227,17 +2229,18 @@ yyreduce:
 						newValue->isArray = false;
 						newValue->isVariable = true;
 						newValue->isNumber = false;
+						newValue->isIterator = variables[(yyvsp[0].string)]->isIterator;
 						newValue->index = "";
 						newValue->index_long = -1;
 						newValue->name = (yyvsp[0].string);
 						(yyval.value_struct) = newValue;
 					}
 }
-#line 2237 "grammar.cpp" /* yacc.c:1646  */
+#line 2240 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 42:
-#line 558 "grammar.ypp" /* yacc.c:1646  */
+#line 561 "grammar.ypp" /* yacc.c:1646  */
     {
               		// jeśli tablica nie została zadeklarowana 
               		if(variables.find((yyvsp[-3].string)) == variables.end()) {
@@ -2265,11 +2268,11 @@ yyreduce:
 						(yyval.value_struct) = newValue;
 					}
 				}
-#line 2269 "grammar.cpp" /* yacc.c:1646  */
+#line 2272 "grammar.cpp" /* yacc.c:1646  */
     break;
 
   case 43:
-#line 587 "grammar.ypp" /* yacc.c:1646  */
+#line 590 "grammar.ypp" /* yacc.c:1646  */
     {
               
               	if(variables.find((yyvsp[-3].string)) == variables.end()) { // jeśli tablica nie jest zadeklarowana
@@ -2289,11 +2292,11 @@ yyreduce:
 						(yyval.value_struct) = newValue;
 				}
               }
-#line 2293 "grammar.cpp" /* yacc.c:1646  */
+#line 2296 "grammar.cpp" /* yacc.c:1646  */
     break;
 
 
-#line 2297 "grammar.cpp" /* yacc.c:1646  */
+#line 2300 "grammar.cpp" /* yacc.c:1646  */
         default: break;
       }
     if (yychar_backup != yychar)
@@ -2533,7 +2536,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 608 "grammar.ypp" /* yacc.c:1906  */
+#line 611 "grammar.ypp" /* yacc.c:1906  */
 
 
 int yyerror(string s) {
@@ -2547,10 +2550,11 @@ void printInstructions() {
 	}
 }
 
-bool declareVariable(string name) {
+bool declareVariable(string name, bool isIterator) {
 	// jeśli zmienna o nazwie name nie jest jeszcze zadeklarowana
 	if(variables.find(name) == variables.end()) {
 		MemoryItem* memory_item = new MemoryItem(memory_pointer, name);
+		memory_item->isIterator = isIterator;
 		variables[name] = memory_item;
 		
 		memory_pointer++;
@@ -2611,6 +2615,7 @@ bool loadValueToVariable(struct value* value) {
 }
 
 void storeValueFromCell(struct value* value, long long cell) {
+	if(!value->isIterator) {
 	if(value->isVariable) {
 			// wczytanie wartość do akumulatora
 			instructions.push_back(new Instruction("LOAD",cell));
@@ -2652,6 +2657,10 @@ void storeValueFromCell(struct value* value, long long cell) {
 						
 					}
 			} 
+		}
+		} else {
+			// jeśli value odnosi się do jakiegoś iteratora pętli, to błąd
+			yyerror("Iterator cannot be modified.");
 		}
 }
 

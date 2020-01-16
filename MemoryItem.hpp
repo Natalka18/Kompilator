@@ -13,6 +13,7 @@ class MemoryItem {
 						// to index oznacza numer komórki pamięci, w której
 						// znajduje się pierwszy element tablicy
 		bool isArray; // czy element w tej komórce jest elementem tablicy
+		bool isIterator; // czy element w tej komórce jest iteratorem
 		long long size; // rozmiar tablicy, do której należy ta komórka
 		long long begin; // początkowy indeks tablicy
 		long long end; // końcowy indeks tablicy
