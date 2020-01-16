@@ -47,8 +47,21 @@
 	};
 	
 	// stos służący do przechowywania numerów instrukcji w celu ominięcia poleceń
-	// znajdujących się wewnątrz ifa (lub else'a)
+	// znajdujących się wewnątrz ifa (lub else'a).
+	// Przechowywane są numery jumpów, żeby móc później zmienić ich argument
 	stack<long long> ifLinePointerStack;
+	
+	// stos przechowujący numery instrukcji, do których trzeba skoczyć w celu powrotu
+	// do sprawdzenia warunku pętli
+	stack<long long> whileConditionPointerStack;
+	
+	// stos przechowujący numery instrukcji, w których są jumpy (które przenoszą za pętlę).
+	// Potrzebne do późniejszej zmiany argumentu jumpów
+	stack<long long> whileLinePointerStack;
+	
+	// przechowuje miejsca, do których trzeba skoczyć, żeby wrócić do początku DO
+	// w pętli DO WHILE
+	stack<long long> doWhileLinePointerStack;
 	
 	void yyset_out(FILE* out_str);
 	FILE* yyget_out();
@@ -97,7 +110,8 @@
 	void divide(struct value* value1, struct value* value2, long long result_cell, bool mod);
 	// umieszcza w akumulatorze wartość do sprawdzenia (value1-value2), następnie wykonuje 
 	// skok do instrukcji o numerze k
-	void checkCondition(struct cond* c, long long k);
+	void checkConditionNegation(struct cond* c, long long k); // if, while
+	void checkCondition(struct cond* c, long long k); // do while
 %}
 
 %define parse.error verbose
@@ -198,7 +212,7 @@ command       : identifier ASSIGN expression semicolon {
 					memory_pointer--; // patrz expression: value
 				}
               | IF condition {
-              		checkCondition($2,0); // narazie nie da się ustalić, dokąd ma być skok
+              		checkConditionNegation($2,0); // narazie nie da się ustalić, dokąd ma być skok
               		ifLinePointerStack.push(instructions.size()-1);
               } THEN commands {
               		long long jumpIndex = ifLinePointerStack.top();
@@ -216,8 +230,41 @@ command       : identifier ASSIGN expression semicolon {
               		instruction->arg = instructions.size();
               		
               } end_if
-              | WHILE condition DO commands ENDWHILE
-              | DO commands WHILE condition ENDDO
+              | WHILE condition {
+              		// póżniej będziemy skakać do początku sprawdzania warunku
+              		whileConditionPointerStack.push(instructions.size());
+              		
+              		checkConditionNegation($2,0); // narazie nie da się ustalić, dokąd ma być skok
+              		
+              		// na drugim stosie umieszczamy, w której linii znajduje się skok
+              		// (JNEG, JZERO, JPOS), w którym trzeba ustalić miejsce skoku
+              		whileLinePointerStack.push(instructions.size() - 1);
+              		
+              } DO commands ENDWHILE {
+              		long long conditionPointer = whileConditionPointerStack.top();
+              		whileConditionPointerStack.pop();
+              		
+              		long long linePointer = whileLinePointerStack.top();
+              		whileLinePointerStack.pop();
+              		
+              		// dodajemy jumpa, który wróci do sprawdzenia warunku
+              		instructions.push_back(new Instruction("JUMP",conditionPointer));
+              		
+              		// jeśli warunek while'a nie jest spełniony, to trzeba skakać
+              		// za powyższego jumpa
+              		instructions[linePointer]->arg = instructions.size();
+              }
+              | DO {
+              		doWhileLinePointerStack.push(instructions.size());
+              		
+              } commands WHILE condition ENDDO {
+              		checkCondition($5,0);
+              		long long jumpIndex = instructions.size()-1;
+              		long long loopBegin = doWhileLinePointerStack.top();
+              		doWhileLinePointerStack.pop();
+              		
+              		instructions[jumpIndex]->arg = loopBegin;
+              }
               | FOR pidentifier FROM value TO value DO commands ENDFOR
               | FOR pidentifier FROM value DOWNTO value DO commands ENDFOR
               | READ identifier semicolon {
@@ -1073,7 +1120,7 @@ void subtract(struct value* value1, struct value* value2, long long result_cell)
 	}
 }
 
-void checkCondition(struct cond* c, long long k) {
+void checkConditionNegation(struct cond* c, long long k) {
 	struct value* value1 = c->value1;
 	struct value* value2 = c->value2;
 	string op = c->op;
@@ -1098,6 +1145,34 @@ void checkCondition(struct cond* c, long long k) {
 		instructions.push_back(new Instruction("JPOS",0));
 	} else if(op == "GEQ") {
 		instructions.push_back(new Instruction("JNEG",0));
+	}
+}
+
+void checkCondition(struct cond* c, long long k) {
+	struct value* value1 = c->value1;
+	struct value* value2 = c->value2;
+	string op = c->op;
+	
+	subtract(value1,value2,0);
+	
+	if(op == "GE") {
+		instructions.push_back(new Instruction("JPOS",0));
+	} else if(op == "EQ") {
+		instructions.push_back(new Instruction("JZERO",0));
+	} else if(op == "NEQ") {
+		instructions.push_back(new Instruction("JPOS",instructions.size() + 4));
+		instructions.push_back(new Instruction("STORE",memory_pointer));
+		instructions.push_back(new Instruction("SUB",0));
+		instructions.push_back(new Instruction("SUB",memory_pointer));
+		instructions.push_back(new Instruction("JPOS",0));
+	} else if(op == "LE") {
+		instructions.push_back(new Instruction("JNEG",0));
+	} else if(op == "LEQ") {
+		instructions.push_back(new Instruction("DEC"));
+		instructions.push_back(new Instruction("JNEG",0));
+	} else if(op == "GEQ") {
+		instructions.push_back(new Instruction("INC"));
+		instructions.push_back(new Instruction("JPOS",0));
 	}
 }
 
