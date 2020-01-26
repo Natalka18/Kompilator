@@ -1711,7 +1711,7 @@ yyreduce:
   case 4:
 #line 199 "grammar.ypp" /* yacc.c:1646  */
     {
-					declareVariable((yyvsp[0].string), false);
+				declareVariable((yyvsp[0].string), false);
 				}
 #line 1717 "grammar.cpp" /* yacc.c:1646  */
     break;
@@ -2553,6 +2553,7 @@ void printInstructions() {
 }
 
 bool declareVariable(string name, bool isIterator) {
+
 	// jeśli zmienna o nazwie name nie jest jeszcze zadeklarowana
 	if(variables.find(name) == variables.end()) {
 		MemoryItem* memory_item = new MemoryItem(memory_pointer, name);
@@ -2563,9 +2564,14 @@ bool declareVariable(string name, bool isIterator) {
 		
 		//test
 		//cout<<name + ": "<<variables[name]->index<<endl;
+		
 	} else {
 		yyerror("Duplicate variable \"" + name + "\"");
+		
+		return false;
 	}
+	
+	return true;
 }
 
 bool loadValueToVariable(struct value* value) {
@@ -2675,9 +2681,10 @@ void printValue(struct value* value) {
 
 
 bool declareArray(string name, long long begin, long long end) {
+
 	// jeśli zmienna o nazwie name nie jest jeszcze zadeklarowana
 	if(variables.find(name) == variables.end()) {
-		if(begin >= end) {
+		if(begin > end) {
 			yyerror("Declaration of array " + name + " failed");
 			return false;
 		}
